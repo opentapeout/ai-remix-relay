@@ -21,5 +21,8 @@ await mkdir(resolve(distRoot, ".openai"), { recursive: true });
 await mkdir(resolve(distRoot, "drizzle"), { recursive: true });
 await writeFile(resolve(distRoot, "server/index.js"), worker);
 await writeFile(resolve(distRoot, ".openai/hosting.json"), manifest);
-await copyFile(resolve(projectRoot, "drizzle/0000_relay_core.sql"), resolve(distRoot, "drizzle/0000_relay_core.sql"));
+await Promise.all([
+  copyFile(resolve(projectRoot, "drizzle/0000_relay_core.sql"), resolve(distRoot, "drizzle/0000_relay_core.sql")),
+  copyFile(resolve(projectRoot, "drizzle/0001_commercial_core.sql"), resolve(distRoot, "drizzle/0001_commercial_core.sql")),
+]);
 console.log(`Built ${distRoot}`);

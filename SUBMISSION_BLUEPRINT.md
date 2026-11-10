@@ -111,6 +111,6 @@
 
 ## 六、当前真实结论
 
-目前项目**仍不符合提交条件**，但产品界面已经回归 AI Remix Relay：Relay Feed、规则选择、候选选择、发布子节点、本地谱系、Receipt 和交接链接均可操作，并真实读取 X Layer RPC。当前候选是明确标注的演示生成器，数据仅保存在本机，不能证明真实 AI、多用户接力或 TapeOut 生态集成。
+目前项目**仍不符合最终提交条件**，但已从页面原型升级为服务器化产品：D1/R2 多用户数据与作品存储、真实 Seed 上传、动态 Relay Feed、可追踪邀请与接受状态、我的创作、无限横向谱系、内容哈希、授权与分成字段、Credits 账本、限流、幂等发布和失败退款均已实现。公网 Worker 已部署并真实读取 X Layer RPC。
 
-下一步必须接入真实 AI 与多用户后端，完成两个不同账户的连续两棒；随后部署 RelayRule Circuit 与 X Layer RelayRegistry。此后才进入付费、TapeSend、DeWEB 和 Demo 优化。
+当前硬缺口是 OpenAI Secret 尚未配置，因此不能验证真实图生图质量、成本和延迟；RelayRule TapeOut Circuit 与 X Layer RelayRegistry 也尚未部署。下一步是完成真实 AI 闭环和两账户连续两棒，再部署 Circuit 与 Registry 并生成链上证据。

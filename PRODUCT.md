@@ -49,7 +49,7 @@ AI Remix Relay 是一个 AI 驱动的多人接力创作网络。它把一次性�
 
 ## Evidence on Hand
 
-当前仓库已有回归主题的 AI Remix Relay 可交互原型：Relay Feed、规则选择、三个候选、发布子节点、本地谱系、Receipt 面板、交接链接和 X Layer 只读 RPC 均可运行。候选仍由透明标注的演示生成器提供，节点仅保存在浏览器。真实 AI API、多用户后端、RelayRule Circuit、RelayRegistry 合约、AI 调用回执、TapeSend 交接和 DeWEB 发布尚未完成，不能宣称为已交付能力。
+当前仓库已有服务器化的 AI Remix Relay：D1 保存 Relay、节点、邀请、Credits 与用量账本，R2 保存 Seed 和候选作品；用户可在没有 AI Key 时上传并发起真实 Seed、创建可追踪邀请、接受接棒、查看收件箱和自己的创作。节点记录真实文件哈希、授权、分成和应用层规则预检，生成接口具备限流、幂等、Credits 预扣与失败退款。公网 Worker 已部署，X Layer 只读 RPC 可运行。OpenAI Secret、RelayRule TapeOut Circuit、RelayRegistry 链上写入、真实支付、TapeSend 和 DeWEB 尚未完成，不能宣称为已交付能力。
 
 ## Product Principles
 

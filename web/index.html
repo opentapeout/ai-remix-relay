@@ -132,15 +132,15 @@
     .graph-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
     .graph-toolbar h3{margin:0;font-size:18px}
     .graph-legend{display:flex;gap:14px;font-size:11px;color:#aaa397}
-    .graph{min-width:900px;display:grid;grid-template-columns:repeat(4,180px);grid-template-rows:repeat(3,150px);column-gap:68px;row-gap:24px;position:relative}
-    .graph::before{content:"";position:absolute;left:90px;right:120px;top:72px;border-top:1px solid #827c72}
-    .graph-card{background:#24231f;border:1px solid #4d4942;border-radius:12px;padding:8px;position:relative;z-index:2;cursor:pointer}
+    .graph{display:flex;gap:28px;align-items:flex-start;overflow-x:auto;padding:2px 2px 22px;scrollbar-color:#827c72 #24231f}
+    .graph-card{background:#24231f;border:1px solid #4d4942;border-radius:12px;padding:8px;position:relative;z-index:2;cursor:pointer;flex:0 0 180px;min-height:126px}
     .graph-card:hover,.graph-card.active{border-color:var(--acid)}
-    .graph-card.branch::before{content:"";position:absolute;width:70px;height:76px;border-left:1px solid #827c72;border-bottom:1px solid #827c72;left:-36px;top:-40px;z-index:-1}
+    .graph-card::before{content:"";position:absolute;width:28px;border-top:1px solid #827c72;left:-29px;top:62px}.graph-card:first-child::before{display:none}
+    .graph-card.branch{margin-top:96px}.graph-card.branch::after{content:"分支";position:absolute;top:-24px;left:0;color:var(--acid);font-size:11px;font-weight:700}
     .graph-art{height:88px;border-radius:7px;background:url('/assets/relay-triptych.webp') left center/300% 100% no-repeat}
     .graph-copy{display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:#aaa397}
     .graph-copy b{font-size:11px;color:#fff}
-    .node0{grid-column:1;grid-row:1}.node1{grid-column:2;grid-row:1}.node2{grid-column:3;grid-row:1}.node3{grid-column:2;grid-row:2}.node4{grid-column:4;grid-row:1}
+    .invite-banner{display:none;background:var(--acid);padding:14px 20px;border-bottom:1px solid var(--ink);align-items:center;justify-content:space-between;gap:18px}.invite-banner.show{display:flex}.invite-banner p{margin:0;font-size:13px}.credit-chip{font-size:12px;font-weight:700;border:1px solid var(--line);border-radius:999px;padding:7px 10px;white-space:nowrap}
     .economy{display:grid;grid-template-columns:1.15fr .85fr;gap:26px}
     .economy-main{background:var(--blue);color:#fff;padding:38px;border-radius:var(--radius)}
     .economy-main h3{font-size:clamp(28px,4vw,50px);line-height:1.04;letter-spacing:-.03em;margin:0 0 18px}
@@ -171,7 +171,8 @@
     .drawer.open{transform:none}
     .drawer-head{display:flex;justify-content:space-between;align-items:center}
     .drawer-head h2{margin:0;font-size:28px;letter-spacing:-.03em}
-    .icon-btn{border:1px solid var(--line);background:transparent;border-radius:50%;width:38px;height:38px;display:grid;place-items:center;cursor:pointer}
+    .icon-btn{border:1px solid var(--line);background:transparent;border-radius:50%;width:44px;height:44px;display:grid;place-items:center;cursor:pointer}
+    .utility-content{margin-top:22px}.utility-list{display:grid;gap:10px}.utility-item{border:1px solid var(--line);border-radius:11px;padding:13px;background:var(--paper);display:grid;grid-template-columns:64px 1fr;gap:12px;text-align:left}.utility-thumb{width:64px;height:64px;border-radius:7px;background:var(--ink-soft) center/cover}.utility-item b,.utility-item span{display:block}.utility-item span{font-size:12px;color:var(--ink-soft);margin-top:4px}.seed-form{display:grid;gap:14px}.seed-form input,.seed-form select,.seed-form textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:12px;background:#fffdf8;font:inherit}.seed-form label span{display:block;font-size:12px;font-weight:700;margin-bottom:6px}.publication-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.publication-options label{font-size:11px}.publication-options select,.publication-options input{width:100%;margin-top:5px;border:1px solid var(--line);border-radius:8px;padding:9px;background:#fffdf8}
     .receipt{border-top:1px solid var(--ink);margin-top:28px;padding-top:18px}
     .receipt-row{display:grid;grid-template-columns:110px 1fr;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:12px}
     .receipt-row span{color:#716a60}
@@ -192,7 +193,7 @@
       .sidebar h2,.side-bottom{display:none}.feed-list{display:flex;overflow:auto}.feed-item{flex:0 0 190px}.feed-thumb{height:88px}
       .stage{min-height:auto}.stage-art{min-height:510px}.stage-panel{padding:28px 20px}.art-caption{left:20px;bottom:20px;right:20px}.art-caption h1{font-size:42px}.edition{display:none}
       .section{padding:64px 20px}.section-title{display:block}.section-title p{margin-top:18px}.candidate-grid{grid-template-columns:1fr}.candidate{display:grid;grid-template-columns:110px 1fr}.candidate-art{aspect-ratio:1}.candidate-meta{padding:12px}
-      .publish-bar{display:block}.publish-bar .btn{width:100%;margin-top:14px}.graph-shell{margin-left:-20px;margin-right:-20px;padding:22px 20px}
+      .publish-bar{display:block}.publish-bar .btn{width:100%;margin-top:14px}.graph-shell{margin-left:-20px;margin-right:-20px;padding:22px 20px}.invite-banner{align-items:flex-start}.publication-options{grid-template-columns:1fr}
       .price-row{grid-template-columns:1fr}.evidence-strip{grid-template-columns:1fr}.evidence-intro,.evidence-item{border-right:0}.footer{padding:28px 20px;display:block}.footer span{display:block;margin-top:10px}
     }
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
@@ -209,7 +210,7 @@
   -->
   <div class="app">
     <header class="topbar">
-      <a class="brand" href="#relay">
+      <a class="brand" href="#relay" aria-label="AI Remix Relay 首页">
         <span class="brand-mark" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h12"/><path d="m13 7 5 5-5 5"/><path d="M5 7v10"/></svg></span>
         <span>AI Remix Relay</span>
       </a>
@@ -220,6 +221,7 @@
         <a href="#economy">创作者计划</a>
       </nav>
       <div class="top-actions">
+        <span class="credit-chip" id="creditBalance">3 Credits</span>
         <span class="chain-state" id="chainState"><i></i><span id="chainText">读取 X Layer…</span></span>
         <button class="btn btn-dark btn-small" id="createSeed" type="button">发起 Seed</button>
       </div>
@@ -228,7 +230,7 @@
     <div class="layout">
       <aside class="sidebar" aria-label="可参与的 Relay">
         <h2>现在可以接</h2>
-        <div class="feed-list">
+        <div class="feed-list" id="feedList">
           <button class="feed-item active" type="button" data-relay="city">
             <span class="feed-thumb triptych"></span>
             <span class="feed-title">City Signal 2049</span>
@@ -246,12 +248,13 @@
           </button>
         </div>
         <div class="side-bottom">
-          <button class="side-link" type="button" id="openInbox"><svg class="icon" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="m4 13 4 2h8l4-2"/></svg>收到的下一棒 <strong style="margin-left:auto">2</strong></button>
+          <button class="side-link" type="button" id="openInbox"><svg class="icon" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="m4 13 4 2h8l4-2"/></svg>接力收件箱 <strong id="inboxCount" style="margin-left:auto">0</strong></button>
           <button class="side-link" type="button" id="openMine"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 4-7 8-7s7 2 8 7"/></svg>我的创作</button>
         </div>
       </aside>
 
       <main class="main">
+        <div class="invite-banner" id="inviteBanner" role="status"><p id="inviteMessage"></p><button class="btn btn-dark btn-small" id="acceptInvite" type="button">接受并接棒</button></div>
         <section class="stage" id="relay">
           <div class="stage-art">
             <div class="stage-artwork" id="stageArtwork"></div>
@@ -301,7 +304,7 @@
                   <button class="rule-chip" type="button" data-rule="文字节奏" aria-pressed="false">文字节奏</button>
                 </div>
                 <label class="field"><span>给这一棒的创作意图</span><textarea id="promptInput">让城市信号变得更明亮，像刚刚收到来自未来的好消息。</textarea></label>
-                <div class="engine-disclosure" id="engineDisclosure"><b>正在连接创作引擎</b><br>检查 AI、多人数据库与作品存储状态。未配置的能力会明确提示，不会用假数据替代。</div>
+                <div class="engine-disclosure" id="engineDisclosure" role="status" aria-live="polite"><b>正在连接创作引擎</b><br>检查 AI、多人数据库与作品存储状态。未配置的能力会明确提示，不会用假数据替代。</div>
                 <button class="btn btn-dark" id="generateCandidates" type="button" style="width:100%">生成 3 个候选</button>
               </div>
               <div class="candidate-area">
@@ -311,8 +314,12 @@
                   <button class="candidate" type="button" data-candidate="1" aria-pressed="false" disabled><span class="candidate-art"></span><span class="candidate-meta"><b>增强信号</b><span>候选 B</span></span></button>
                   <button class="candidate" type="button" data-candidate="2" aria-pressed="false" disabled><span class="candidate-art"></span><span class="candidate-meta"><b>打开分支</b><span>候选 C</span></span></button>
                 </div>
+                <div class="publication-options">
+                  <label>二创授权<select id="licenseCode"><option value="CC-BY-NC-4.0">署名—非商业使用</option><option value="CC-BY-4.0">署名即可使用</option><option value="ALL-RIGHTS-RESERVED">保留全部权利</option></select></label>
+                  <label>后续付费分成<input id="splitBps" type="number" min="0" max="30" step="1" value="10" aria-describedby="splitHint"><span id="splitHint">0–30%，仅在未来付费 Remix 时生效</span></label>
+                </div>
                 <div class="publish-bar">
-                  <span class="publish-status" id="publishStatus"><b>等待真实生成</b>候选生成后才可发布</span>
+                  <span class="publish-status" id="publishStatus" role="status" aria-live="polite"><b>等待真实生成</b>候选生成后才可发布</span>
                   <button class="btn btn-blue" id="publishNode" type="button" disabled>生成后发布到 Relay</button>
                 </div>
               </div>
@@ -358,7 +365,7 @@
               <div class="evidence-intro"><h3>真实进度，不用标签冒充集成。</h3><p>只有产生可核验地址、交易或回执的能力，才会在最终提交材料中标为完成。</p></div>
               <div class="evidence-item"><span>X Layer</span><b class="status-real" id="evidenceChainStatus">正在读取真实 RPC</b><code id="evidenceChain">chainId — · block —</code></div>
               <div class="evidence-item"><span>TapeOut RelayRule</span><b class="status-pending">待部署</b><code>Processor / Circuit ID 尚未生成</code></div>
-              <div class="evidence-item"><span>RelayRegistry</span><b class="status-pending">待部署</b><code>当前发布仅保存在本机浏览器</code></div>
+              <div class="evidence-item"><span>RelayRegistry</span><b class="status-pending">待部署</b><code>应用层记录已保存至 D1，链上写入尚未启用</code></div>
             </div>
           </div>
         </section>
@@ -375,13 +382,19 @@
       <div class="receipt-row"><span>Node</span><b id="receiptNode">—</b></div>
       <div class="receipt-row"><span>Parent</span><b id="receiptParent">—</b></div>
       <div class="receipt-row"><span>Change rule</span><b id="receiptRule">—</b></div>
-      <div class="receipt-row"><span>Creator</span><b>Guest creator</b></div>
-      <div class="receipt-row"><span>Content hash</span><code id="receiptHash">—</code></div>
+      <div class="receipt-row"><span>Creator</span><b id="receiptCreator">—</b></div>
+      <div class="receipt-row"><span>Content hash</span><code id="receiptContentHash">—</code></div>
+      <div class="receipt-row"><span>Receipt hash</span><code id="receiptHash">—</code></div>
+      <div class="receipt-row"><span>License</span><b id="receiptLicense">—</b></div>
       <div class="receipt-row"><span>AI receipt</span><b class="status-pending">Pending provider integration</b></div>
       <div class="receipt-row"><span>Storage</span><b id="receiptStorage">D1 + R2</b></div>
       <div class="receipt-row"><span>X Layer tx</span><b class="status-pending">Not submitted</b></div>
     </div>
     <div class="handoff-box"><h3>把下一棒交出去</h3><p>复制这条 Relay 的邀请链接。其他已获访问权限的用户可打开同一节点继续创作。</p><button class="btn btn-dark" id="copyHandoff" type="button" style="width:100%">复制接力链接</button></div>
+  </aside>
+  <aside class="drawer" id="utilityDrawer" role="dialog" aria-modal="true" aria-labelledby="utilityTitle" aria-hidden="true" inert>
+    <div class="drawer-head"><h2 id="utilityTitle">工作区</h2><button class="icon-btn" id="closeUtility" type="button" aria-label="关闭"><svg class="icon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+    <div class="utility-content" id="utilityContent"></div>
   </aside>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -390,7 +403,7 @@
       var $=function(id){return document.getElementById(id)};
       var toast=$('toast');
       var state={
-        selectedNode:'n2',selectedCandidate:0,selectedCandidateId:null,rule:'色彩气候',generated:false,identity:'@guest',
+        relayId:'city-signal-2049',selectedNode:'n2',selectedCandidate:0,selectedCandidateId:null,rule:'色彩气候',generated:false,identity:'@guest',mine:[],invites:[],invite:null,
         nodes:[
           {id:'n0',parent:null,creator:'@miko',title:'Seed',panel:0,branch:false,assetUrl:'/assets/relay-triptych.webp'},
           {id:'n1',parent:'n0',creator:'@lin',title:'Signal',panel:1,branch:false,assetUrl:'/assets/relay-triptych.webp'},
@@ -421,25 +434,28 @@
       }
       function renderRail(){
         var path=state.nodes.filter(function(node){return !node.branch}).slice(-8);
-        $('rail').innerHTML=path.map(function(node){return '<button class="rail-node '+(node.id===state.selectedNode?'active':'')+'" type="button" data-node="'+escapeText(node.id)+'" aria-label="查看 '+escapeText(node.id)+'"><span class="rail-art" style="'+artworkStyle(node)+'"></span></button>'}).join('');
+        $('rail').innerHTML=path.map(function(node){return '<button class="rail-node '+(node.id===state.selectedNode?'active':'')+'" type="button" data-node="'+escapeText(node.id)+'" aria-pressed="'+(node.id===state.selectedNode)+'" aria-label="查看 '+escapeText(node.id)+'"><span class="rail-art" style="'+artworkStyle(node)+'"></span></button>'}).join('');
         $('rail').querySelectorAll('[data-node]').forEach(function(button){button.addEventListener('click',function(){state.selectedNode=button.dataset.node;renderAll()})});
       }
       function renderGraph(){
-        var nodes=state.nodes.slice(-7);
+        var nodes=state.nodes;
         $('graph').innerHTML=nodes.map(function(node,index){
-          var cls='graph-card node'+Math.min(index,4)+(node.branch?' branch':'')+(node.id===state.selectedNode?' active':'');
-          return '<button class="'+cls+'" type="button" data-graph-node="'+escapeText(node.id)+'"><span class="graph-art" style="display:block;'+artworkStyle(node)+'"></span><span class="graph-copy"><b>'+escapeText(node.title)+'</b><span>'+escapeText(node.creator)+'</span></span></button>';
+          var cls='graph-card'+(node.branch?' branch':'')+(node.id===state.selectedNode?' active':'');
+          return '<button class="'+cls+'" type="button" data-graph-node="'+escapeText(node.id)+'" aria-pressed="'+(node.id===state.selectedNode)+'"><span class="graph-art" style="display:block;'+artworkStyle(node)+'"></span><span class="graph-copy"><b>'+escapeText(node.title)+'</b><span>'+escapeText(node.creator)+'</span></span></button>';
         }).join('');
         $('graph').querySelectorAll('[data-graph-node]').forEach(function(button){button.addEventListener('click',function(){state.selectedNode=button.dataset.graphNode;renderAll();$('relay').scrollIntoView({behavior:'smooth'})})});
       }
       function renderAll(){renderStage();renderRail();renderGraph()}
       async function bootstrap(){
         try{
-          var payload=await api('/api/bootstrap');state.nodes=payload.relay.nodes;state.identity=payload.identity.handle;
-          var requested=new URLSearchParams(location.search).get('node');if(requested&&state.nodes.some(function(node){return node.id===requested}))state.selectedNode=requested;
+          var params=new URLSearchParams(location.search);var query=params.toString()?'?'+params.toString():'';var payload=await api('/api/bootstrap'+query);state.nodes=payload.relay.nodes;state.relayId=payload.relay.id;state.identity=payload.identity?payload.identity.handle:'@guest';state.mine=payload.mine||[];state.invites=payload.invites||[];state.invite=payload.invite||null;
+          var feed=[{id:'city-signal-2049',title:'City Signal 2049',description:'官方示例 Relay',coverUrl:'/assets/relay-triptych.webp'}].concat(payload.feed||[]);$('feedList').innerHTML=feed.map(function(item){return '<button class="feed-item '+(item.id===state.relayId?'active':'')+'" type="button" data-relay-id="'+escapeText(item.id)+'"><span class="feed-thumb" style="background-image:url(&quot;'+encodeURI(item.coverUrl)+'&quot;);background-size:cover;background-position:center"></span><span class="feed-title">'+escapeText(item.title)+'</span><span class="feed-meta"><span>'+escapeText(item.description||'开放接力')+'</span></span></button>'}).join('');
+          $('relayTitle').textContent=payload.relay.title;$('relayCaption').textContent=payload.relay.description||'从一件作品开始，把下一棒交给其他创作者。';$('creditBalance').textContent=(payload.credits&&payload.credits.balance||0)+' Credits';$('inboxCount').textContent=state.invites.length;
+          var requested=params.get('node');if(requested&&state.nodes.some(function(node){return node.id===requested}))state.selectedNode=requested;
           else if(!state.nodes.some(function(node){return node.id===state.selectedNode}))state.selectedNode=state.nodes[state.nodes.length-1].id;
           var ai=payload.integrations.ai;
           $('engineDisclosure').innerHTML=ai?'<b>真实 AI 创作引擎已连接</b><br>三个候选由服务端基于父作品生成，作品与谱系会跨设备保存。':'<b>多人数据与作品存储已连接</b><br>真实 AI Secret 尚未配置；生成按钮会明确提示，不会回退到演示图片。';
+          if(state.invite){$('inviteMessage').textContent=state.invite.sender_name+' 邀请你从节点 '+state.invite.node_id.slice(0,8)+' 接下一棒。状态：'+state.invite.status;$('inviteBanner').classList.add('show');$('acceptInvite').disabled=!state.invite.canAccept}
           $('generateCandidates').disabled=false;renderAll();
         }catch(error){$('engineDisclosure').innerHTML='<b>服务端暂不可用</b><br>当前只展示只读 Seed；请稍后刷新。';$('generateCandidates').disabled=true;showToast('多人服务连接失败')}
       }
@@ -455,10 +471,10 @@
         var prompt=$('promptInput').value.trim();if(prompt.length<4){showToast('请先写下至少 4 个字符的创作意图');$('promptInput').focus();return}
         var button=this;button.disabled=true;button.textContent='真实 AI 生成中…';$('publishNode').disabled=true;$('publishStatus').innerHTML='<b style="color:var(--amber)">正在生成 3 个候选</b>通常需要几十秒，请不要关闭页面';
         try{
-          var payload=await api('/api/generate',{method:'POST',body:JSON.stringify({parentNodeId:currentNode().id,rule:state.rule,prompt:prompt})});
+          var payload=await api('/api/generate',{method:'POST',body:JSON.stringify({relayId:state.relayId,parentNodeId:currentNode().id,rule:state.rule,prompt:prompt,idempotencyKey:crypto.randomUUID()})});
           state.candidates=payload.candidates;state.generated=true;state.selectedCandidate=0;state.selectedCandidateId=payload.candidates[0].id;
           $('candidateGrid').querySelectorAll('.candidate').forEach(function(item,index){item.disabled=false;item.classList.toggle('selected',index===0);item.setAttribute('aria-pressed',index===0?'true':'false');item.querySelector('.candidate-art').style.backgroundImage='url("'+encodeURI(payload.candidates[index].imageUrl)+'")'});
-          $('publishNode').disabled=false;$('publishNode').textContent='发布为下一棒';$('publishStatus').innerHTML='<b>3 个真实候选已保存</b>请选择一个版本加入公共 Relay';showToast('真实 AI 候选已生成');
+          if(payload.credits)$('creditBalance').textContent=payload.credits.balance+' Credits';$('publishNode').disabled=false;$('publishNode').textContent='发布为下一棒';$('publishStatus').innerHTML='<b>3 个真实候选已保存</b>请选择一个版本加入公共 Relay';showToast('真实 AI 候选已生成');
         }catch(error){
           var message=error.code==='provider_not_configured'?'站点尚未配置 AI Secret':error.message;
           $('publishStatus').innerHTML='<b style="color:var(--amber)">生成未完成</b>'+escapeText(message);showToast(message);
@@ -469,26 +485,31 @@
         if(!state.selectedCandidateId){showToast('请先生成并选择候选');return}
         var button=this;button.disabled=true;button.textContent='正在发布…';
         try{
-          var payload=await api('/api/nodes',{method:'POST',body:JSON.stringify({candidateId:state.selectedCandidateId})});state.nodes.push(payload.node);state.selectedNode=payload.node.id;renderAll();
-          $('receiptNode').textContent=payload.node.id.slice(0,12);$('receiptParent').textContent=payload.node.parent.slice(0,12);$('receiptRule').textContent=payload.node.title;$('receiptHash').textContent=payload.receipt.hash;$('receiptStorage').textContent=payload.receipt.storage;
+          var licenseCode=$('licenseCode').value;var splitBps=Math.round(Number($('splitBps').value||0)*100);var payload=await api('/api/nodes',{method:'POST',body:JSON.stringify({candidateId:state.selectedCandidateId,licenseCode:licenseCode,splitBps:splitBps})});if(!payload.duplicate)state.nodes.push(payload.node);state.selectedNode=payload.node.id;renderAll();
+          $('receiptNode').textContent=payload.node.id.slice(0,12);$('receiptParent').textContent=(payload.node.parent||'—').slice(0,12);$('receiptRule').textContent=payload.node.title;$('receiptCreator').textContent=payload.node.creator;$('receiptContentHash').textContent=payload.node.contentHash||'—';$('receiptHash').textContent=payload.receipt?payload.receipt.hash:'已存在';$('receiptLicense').textContent=payload.node.licenseCode||licenseCode;$('receiptStorage').textContent=payload.receipt?payload.receipt.storage:'D1 + R2';
           lastFocus=button;$('receiptDrawer').removeAttribute('inert');$('receiptDrawer').classList.add('open');$('receiptDrawer').setAttribute('aria-hidden','false');$('closeDrawer').focus();showToast('下一棒已发布到公共谱系');
           state.generated=false;state.selectedCandidateId=null;
         }catch(error){showToast(error.message)}finally{button.disabled=!state.selectedCandidateId;button.textContent='发布为下一棒'}
       });
       function closeDrawer(){$('receiptDrawer').classList.remove('open');$('receiptDrawer').setAttribute('aria-hidden','true');$('receiptDrawer').setAttribute('inert','');if(lastFocus)lastFocus.focus()}
       $('closeDrawer').addEventListener('click',closeDrawer);
+      function openUtility(title,html,focus){$('utilityTitle').textContent=title;$('utilityContent').innerHTML=html;$('utilityDrawer').removeAttribute('inert');$('utilityDrawer').classList.add('open');$('utilityDrawer').setAttribute('aria-hidden','false');(focus?$('utilityContent').querySelector(focus):$('closeUtility')).focus()}
+      function closeUtility(){$('utilityDrawer').classList.remove('open');$('utilityDrawer').setAttribute('aria-hidden','true');$('utilityDrawer').setAttribute('inert','')}
+      $('closeUtility').addEventListener('click',closeUtility);
       document.addEventListener('keydown',function(event){
-        var drawer=$('receiptDrawer');if(!drawer.classList.contains('open'))return;if(event.key==='Escape'){closeDrawer();return}
+        var drawer=$('receiptDrawer');if(event.key==='Escape'&&$('utilityDrawer').classList.contains('open')){closeUtility();return}if(!drawer.classList.contains('open'))return;if(event.key==='Escape'){closeDrawer();return}
         if(event.key==='Tab'){var focusable=Array.from(drawer.querySelectorAll('button,[href],input,textarea,select,[tabindex]:not([tabindex="-1"])')).filter(function(item){return !item.disabled});if(!focusable.length)return;var first=focusable[0];var last=focusable[focusable.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}}
       });
-      $('copyHandoff').addEventListener('click',async function(){var link=location.origin+location.pathname+'?relay=city-signal-2049&node='+encodeURIComponent(state.selectedNode);try{await navigator.clipboard.writeText(link);showToast('真实接力链接已复制')}catch{showToast('请从地址栏复制接力链接')}});
-      $('shareRelay').addEventListener('click',async function(){var link=location.origin+location.pathname+'?relay=city-signal-2049';try{await navigator.clipboard.writeText(link);showToast('Relay 分享链接已复制')}catch{showToast('请从地址栏复制分享链接')}});
-      $('createSeed').addEventListener('click',function(){showToast('发起新 Seed 将在上传与授权流程完成后开放')});
-      $('openInbox').addEventListener('click',function(){showToast('收件箱将在公开测试阶段开放')});
-      $('openMine').addEventListener('click',function(){showToast('当前身份：'+state.identity)});
-      document.querySelectorAll('.feed-item').forEach(function(item){item.addEventListener('click',function(){document.querySelectorAll('.feed-item').forEach(function(feed){feed.classList.remove('active')});item.classList.add('active');if(item.dataset.relay!=='city'){showToast('这个 Relay 尚未开放接力')}else{$('relay').scrollIntoView({behavior:'smooth'})}})});
+      async function createAndCopyInvite(){try{var payload=await api('/api/invites',{method:'POST',body:JSON.stringify({relayId:state.relayId,nodeId:state.selectedNode})});await navigator.clipboard.writeText(payload.invite.url);showToast('接力邀请已创建并复制，可在收件箱查看状态');await bootstrap()}catch(error){showToast(error.message)}}
+      $('copyHandoff').addEventListener('click',createAndCopyInvite);
+      $('shareRelay').addEventListener('click',createAndCopyInvite);
+      $('acceptInvite').addEventListener('click',async function(){if(!state.invite)return;this.disabled=true;try{await api('/api/invites/accept',{method:'POST',body:JSON.stringify({token:state.invite.token})});$('inviteMessage').textContent='邀请已接受。现在完成这一棒并发布，邀请者将能看到记录。';$('takeBaton').click();showToast('已接受接力邀请')}catch(error){showToast(error.message)}finally{this.disabled=false}});
+      $('createSeed').addEventListener('click',function(){openUtility('发起新 Seed','<form class="seed-form" id="seedForm"><p>上传你有权使用的原始作品，设置二创授权后即可生成一个可分享的 Relay。无需 AI Key。</p><label><span>Relay 名称</span><input name="title" maxlength="80" required placeholder="例如：雨后的城市信号"></label><label><span>作品与接力说明</span><textarea name="description" maxlength="280" required placeholder="告诉下一位创作者应该保留什么"></textarea></label><label><span>原始作品（PNG/JPEG/WebP，最大 8 MB）</span><input name="artwork" type="file" accept="image/png,image/jpeg,image/webp" required></label><label><span>二创授权</span><select name="licenseCode"><option value="CC-BY-NC-4.0">署名—非商业使用</option><option value="CC-BY-4.0">署名即可使用</option><option value="ALL-RIGHTS-RESERVED">保留全部权利</option></select></label><label><span>后续付费分成（0–30%）</span><input name="splitPercent" type="number" min="0" max="30" value="10"></label><button class="btn btn-blue" type="submit">上传并发起 Relay</button><p id="seedStatus" role="status" aria-live="polite"></p></form>','input');var form=$('seedForm');form.addEventListener('submit',async function(event){event.preventDefault();var button=form.querySelector('button');button.disabled=true;$('seedStatus').textContent='正在计算作品哈希并上传…';var data=new FormData(form);data.set('splitBps',String(Math.round(Number(data.get('splitPercent')||0)*100)));data.delete('splitPercent');try{var response=await fetch('/api/seeds',{method:'POST',body:data});var payload=await response.json();if(!response.ok)throw new Error(payload.error&&payload.error.message||'创建失败');location.href=location.pathname+'?relay='+encodeURIComponent(payload.relay.id)+'&node='+encodeURIComponent(payload.node.id)}catch(error){$('seedStatus').textContent=error.message;button.disabled=false}})});
+      $('openInbox').addEventListener('click',function(){var html=state.invites.length?'<div class="utility-list">'+state.invites.map(function(invite){return '<div class="utility-item"><span class="utility-thumb"></span><div><b>来自 '+escapeText(invite.sender_name)+'</b><span>'+escapeText(invite.status)+' · '+escapeText(invite.node_id.slice(0,10))+'</span></div></div>'}).join('')+'</div>':'<p>暂无接力记录。创建邀请后，这里会显示已发出、已接受和完成状态。</p>';openUtility('接力收件箱',html)});
+      $('openMine').addEventListener('click',function(){var html='<p><b>'+escapeText(state.identity)+'</b> 的公开创作</p>'+(state.mine.length?'<div class="utility-list">'+state.mine.map(function(node){return '<button class="utility-item" data-mine-relay="'+escapeText(node.relay_id)+'" data-mine-node="'+escapeText(node.id)+'"><span class="utility-thumb" style="background-image:url(&quot;'+encodeURI(node.assetUrl)+'&quot;)"></span><div><b>'+escapeText(node.title)+'</b><span>'+escapeText(node.content_hash||'等待内容哈希')+'</span></div></button>'}).join('')+'</div>':'<p>你还没有发布作品。可以先发起 Seed，即使 AI 尚未配置也能创建 Relay。</p>');openUtility('我的创作',html);$('utilityContent').querySelectorAll('[data-mine-node]').forEach(function(item){item.addEventListener('click',function(){location.href=location.pathname+'?relay='+encodeURIComponent(item.dataset.mineRelay)+'&node='+encodeURIComponent(item.dataset.mineNode)})})});
+      $('feedList').addEventListener('click',function(event){var item=event.target.closest('[data-relay-id]');if(!item)return;location.href=location.pathname+'?relay='+encodeURIComponent(item.dataset.relayId)});
       $('resetDemo').addEventListener('click',function(){location.reload()});
-      async function readChain(){try{var response=await fetch('https://rpc.xlayer.tech',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify([{jsonrpc:'2.0',id:1,method:'eth_chainId',params:[]},{jsonrpc:'2.0',id:2,method:'eth_blockNumber',params:[]}])});if(!response.ok)throw new Error();var data=await response.json();var chain=parseInt(data.find(function(item){return item.id===1}).result,16);var block=parseInt(data.find(function(item){return item.id===2}).result,16);$('chainState').classList.add('live');$('chainText').textContent='X Layer '+chain+' · '+block.toLocaleString();$('evidenceChainStatus').textContent='真实 RPC 读取成功';$('evidenceChain').textContent='chainId '+chain+' · block '+block.toLocaleString()}catch{$('chainText').textContent='X Layer RPC 暂不可用';$('evidenceChainStatus').textContent='RPC 读取失败，可重试';$('evidenceChainStatus').className='status-pending';$('evidenceChain').textContent='未伪造链上状态'}}
+      async function readChain(){var controller=new AbortController();var timeout=setTimeout(function(){controller.abort()},8000);try{var response=await fetch('https://rpc.xlayer.tech',{method:'POST',signal:controller.signal,headers:{'content-type':'application/json'},body:JSON.stringify([{jsonrpc:'2.0',id:1,method:'eth_chainId',params:[]},{jsonrpc:'2.0',id:2,method:'eth_blockNumber',params:[]}])});if(!response.ok)throw new Error();var data=await response.json();var chain=parseInt(data.find(function(item){return item.id===1}).result,16);var block=parseInt(data.find(function(item){return item.id===2}).result,16);$('chainState').classList.add('live');$('chainText').textContent='X Layer '+chain+' · '+block.toLocaleString();$('evidenceChainStatus').textContent='真实 RPC 读取成功';$('evidenceChain').textContent='chainId '+chain+' · block '+block.toLocaleString()}catch{$('chainText').textContent='X Layer RPC 暂不可用';$('evidenceChainStatus').textContent='RPC 读取失败，可重试';$('evidenceChainStatus').className='status-pending';$('evidenceChain').textContent='未伪造链上状态'}finally{clearTimeout(timeout)}}
       renderAll();bootstrap();readChain();
     })();
   </script>
