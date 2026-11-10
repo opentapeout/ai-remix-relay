@@ -230,25 +230,26 @@ async function handleGenerate(request, env) {
 
   const generationId = crypto.randomUUID();
   const createdAt = new Date().toISOString();
+  await env.DB.prepare("INSERT INTO generations (id, user_id, relay_id, parent_node_id, rule, prompt, created_at, idempotency_key, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')").bind(generationId, identity.id, relayId, parentNodeId, rule, prompt, createdAt, idempotencyKey).run();
   const reserved = await reserveCredit(env, identity.id, generationId);
-  if (!reserved) return error("insufficient_credits", "免费额度已用完，请补充 Credits 后继续。", 402);
+  if (!reserved) { await env.DB.prepare("UPDATE generations SET status = 'failed', error_message = 'insufficient_credits' WHERE id = ?").bind(generationId).run(); return error("insufficient_credits", "免费额度已用完，请补充 Credits 后继续。", 402); }
   let generated;
   try { generated = await callImageEdit({ apiKey: env.OPENAI_API_KEY, imageBytes: parentArtwork, rule, prompt }); }
-  catch (caught) { await refundCredit(env, identity.id, generationId); return error("generation_failed", "图像生成失败，本次 Credit 已自动退回。", 502, safeText(caught.message, 180)); }
-
-  await env.DB.prepare(
-    "INSERT INTO generations (id, user_id, relay_id, parent_node_id, rule, prompt, created_at, idempotency_key, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'completed')"
-  ).bind(generationId, identity.id, relayId, parentNodeId, rule, prompt, createdAt, idempotencyKey).run();
+  catch (caught) { await refundCredit(env, identity.id, generationId); await env.DB.prepare("UPDATE generations SET status = 'failed', error_message = ? WHERE id = ?").bind(safeText(caught.message, 180), generationId).run(); return error("generation_failed", "图像生成失败，本次 Credit 已自动退回。", 502); }
 
   const candidates = [];
-  for (let index = 0; index < generated.length; index += 1) {
-    const id = crypto.randomUUID();
-    const assetKey = `relays/${relayId}/generations/${generationId}/${index}.webp`;
-    await env.BUCKET.put(assetKey, generated[index].bytes, { httpMetadata: { contentType: "image/webp" } });
-    await env.DB.prepare(
-      "INSERT INTO candidates (id, generation_id, ordinal, asset_key, revised_prompt, created_at, content_hash) VALUES (?, ?, ?, ?, ?, ?, ?)"
-    ).bind(id, generationId, index, assetKey, generated[index].revisedPrompt, createdAt, generated[index].contentHash).run();
-    candidates.push({ id, ordinal: index, imageUrl: `/api/assets/${encodeURIComponent(assetKey)}` });
+  const storedKeys = [];
+  try {
+    for (let index = 0; index < generated.length; index += 1) {
+      const id = crypto.randomUUID();
+      const assetKey = `relays/${relayId}/generations/${generationId}/${index}.webp`;
+      await env.BUCKET.put(assetKey, generated[index].bytes, { httpMetadata: { contentType: "image/webp" } }); storedKeys.push(assetKey);
+      await env.DB.prepare("INSERT INTO candidates (id, generation_id, ordinal, asset_key, revised_prompt, created_at, content_hash) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(id, generationId, index, assetKey, generated[index].revisedPrompt, createdAt, generated[index].contentHash).run();
+      candidates.push({ id, ordinal: index, imageUrl: `/api/assets/${encodeURIComponent(assetKey)}` });
+    }
+    await env.DB.prepare("UPDATE generations SET status = 'completed' WHERE id = ?").bind(generationId).run();
+  } catch {
+    await Promise.all(storedKeys.map(key => env.BUCKET.delete(key))); await refundCredit(env, identity.id, generationId); await env.DB.prepare("UPDATE generations SET status = 'failed', error_message = 'storage_failure' WHERE id = ?").bind(generationId).run(); return error("storage_failed", "作品保存失败，本次 Credit 已自动退回。", 503);
   }
   const account = await env.DB.prepare("SELECT balance, lifetime_granted, lifetime_spent FROM credit_accounts WHERE user_id = ?").bind(identity.id).first();
   return json({ ok: true, generationId, candidates, credits: account }, 201);
