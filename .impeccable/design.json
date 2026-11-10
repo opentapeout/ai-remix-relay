@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-10T19:46:03.3906307+08:00",
+  "title": "Design System: AI Remix Relay",
+  "extensions": {
+    "colorMeta": {
+      "warm-paper": { "role": "neutral", "displayName": "Warm Stock", "canonical": "#f2eadb", "tonalRamp": ["oklch(15% 0.022 83.3)", "oklch(26% 0.022 83.3)", "oklch(38% 0.022 83.3)", "oklch(50% 0.022 83.3)", "oklch(62% 0.022 83.3)", "oklch(74% 0.022 83.3)", "oklch(86% 0.022 83.3)", "oklch(95% 0.022 83.3)"] },
+      "fresh-proof": { "role": "neutral", "displayName": "Fresh Proof", "canonical": "#fbf7ef", "tonalRamp": ["oklch(15% 0.011 84.6)", "oklch(26% 0.011 84.6)", "oklch(38% 0.011 84.6)", "oklch(50% 0.011 84.6)", "oklch(62% 0.011 84.6)", "oklch(74% 0.011 84.6)", "oklch(86% 0.011 84.6)", "oklch(95% 0.011 84.6)"] },
+      "dense-ink": { "role": "neutral", "displayName": "Dense Ink", "canonical": "#121212", "tonalRamp": ["oklch(15% 0 0)", "oklch(26% 0 0)", "oklch(38% 0 0)", "oklch(50% 0 0)", "oklch(62% 0 0)", "oklch(74% 0 0)", "oklch(86% 0 0)", "oklch(95% 0 0)"] },
+      "soft-ink": { "role": "neutral", "displayName": "Soft Ink", "canonical": "#4e4a43", "tonalRamp": ["oklch(15% 0.013 81.8)", "oklch(26% 0.013 81.8)", "oklch(38% 0.013 81.8)", "oklch(50% 0.013 81.8)", "oklch(62% 0.013 81.8)", "oklch(74% 0.013 81.8)", "oklch(86% 0.013 81.8)", "oklch(95% 0.013 81.8)"] },
+      "relay-blue": { "role": "primary", "displayName": "Electric Relay Blue", "canonical": "#173be8", "tonalRamp": ["oklch(15% 0.257 265.5)", "oklch(26% 0.257 265.5)", "oklch(38% 0.257 265.5)", "oklch(50% 0.257 265.5)", "oklch(62% 0.257 265.5)", "oklch(74% 0.257 265.5)", "oklch(86% 0.257 265.5)", "oklch(95% 0.257 265.5)"] },
+      "registration-red": { "role": "secondary", "displayName": "Registration Red", "canonical": "#ff482e", "tonalRamp": ["oklch(15% 0.223 31.3)", "oklch(26% 0.223 31.3)", "oklch(38% 0.223 31.3)", "oklch(50% 0.223 31.3)", "oklch(62% 0.223 31.3)", "oklch(74% 0.223 31.3)", "oklch(86% 0.223 31.3)", "oklch(95% 0.223 31.3)"] },
+      "proofing-acid": { "role": "tertiary", "displayName": "Proofing Acid", "canonical": "#d9ff2f", "tonalRamp": ["oklch(15% 0.214 120.4)", "oklch(26% 0.214 120.4)", "oklch(38% 0.214 120.4)", "oklch(50% 0.214 120.4)", "oklch(62% 0.214 120.4)", "oklch(74% 0.214 120.4)", "oklch(86% 0.214 120.4)", "oklch(95% 0.214 120.4)"] },
+      "rule-line": { "role": "neutral", "displayName": "Rule Line", "canonical": "#cfc5b5", "tonalRamp": ["oklch(15% 0.025 79.7)", "oklch(26% 0.025 79.7)", "oklch(38% 0.025 79.7)", "oklch(50% 0.025 79.7)", "oklch(62% 0.025 79.7)", "oklch(74% 0.025 79.7)", "oklch(86% 0.025 79.7)", "oklch(95% 0.025 79.7)"] },
+      "verified-green": { "role": "status", "displayName": "Verified Green", "canonical": "#16734c", "tonalRamp": ["oklch(15% 0.104 159.7)", "oklch(26% 0.104 159.7)", "oklch(38% 0.104 159.7)", "oklch(50% 0.104 159.7)", "oklch(62% 0.104 159.7)", "oklch(74% 0.104 159.7)", "oklch(86% 0.104 159.7)", "oklch(95% 0.104 159.7)"] },
+      "pending-amber": { "role": "status", "displayName": "Pending Amber", "canonical": "#a85f00", "tonalRamp": ["oklch(15% 0.129 61.7)", "oklch(26% 0.129 61.7)", "oklch(38% 0.129 61.7)", "oklch(50% 0.129 61.7)", "oklch(62% 0.129 61.7)", "oklch(74% 0.129 61.7)", "oklch(86% 0.129 61.7)", "oklch(95% 0.129 61.7)"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Artwork Display", "purpose": "Artwork titles over the hero image." },
+      "headline": { "displayName": "Section Headline", "purpose": "Short editorial statements that frame each stage of the relay." },
+      "title": { "displayName": "Workbench Title", "purpose": "Studio, graph, evidence, and drawer headings." },
+      "body": { "displayName": "Working Copy", "purpose": "Product explanation and task guidance." },
+      "label": { "displayName": "Proof Label", "purpose": "Editions, evidence, status, and compact technical metadata." }
+    },
+    "shadows": [
+      { "name": "proof-table", "value": "0 22px 55px rgba(34,26,15,.14)", "purpose": "The single ambient lift for the proofing studio and transient toast." },
+      { "name": "receipt-drawer", "value": "-20px 0 55px rgba(0,0,0,.18)", "purpose": "Directional separation for the receipt and handoff drawer." }
+    ],
+    "motion": [
+      { "name": "action-lift", "value": "transform .18s ease, background .18s ease, color .18s ease", "purpose": "Two-pixel hover lift and press return for actions." },
+      { "name": "artwork-shift", "value": "background-position .55s cubic-bezier(.16,1,.3,1), filter .35s ease", "purpose": "Moves between panels of the triptych without abrupt cuts." },
+      { "name": "drawer-enter", "value": "transform .35s cubic-bezier(.16,1,.3,1)", "purpose": "Slides the receipt and handoff layer in from the right." }
+    ],
+    "breakpoints": [
+      { "name": "stack", "value": "1100px" },
+      { "name": "mobile", "value": "760px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Relay Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The consequential next action: take the baton or publish the selected proof.",
+      "html": "<button class=\"ds-btn-primary\">接下一棒 →</button>",
+      "css": ".ds-btn-primary{border:0;border-radius:10px;padding:11px 16px;background:var(--blue,#173be8);color:#fff;font:700 16px/1.55 'DM Sans','Noto Sans SC',sans-serif;cursor:pointer;transition:transform .18s ease,background .18s ease}.ds-btn-primary:hover{transform:translateY(-2px)}.ds-btn-primary:active{transform:translateY(0)}.ds-btn-primary:focus-visible{outline:3px solid var(--blue,#173be8);outline-offset:3px}.ds-btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none}"
+    },
+    {
+      "name": "Dark Generation Button",
+      "kind": "button",
+      "refersTo": "button-dark",
+      "description": "A dense-ink action for generation and seed creation.",
+      "html": "<button class=\"ds-btn-dark\">生成 3 个候选</button>",
+      "css": ".ds-btn-dark{border:0;border-radius:10px;padding:11px 16px;background:var(--ink,#121212);color:#fff;font:700 16px/1.55 'DM Sans','Noto Sans SC',sans-serif;cursor:pointer;transition:transform .18s ease}.ds-btn-dark:hover{transform:translateY(-2px)}.ds-btn-dark:active{transform:translateY(0)}.ds-btn-dark:focus-visible{outline:3px solid var(--blue,#173be8);outline-offset:3px}"
+    },
+    {
+      "name": "Relay Rule Chip",
+      "kind": "chip",
+      "refersTo": "chip-rule",
+      "description": "Locks one permitted change dimension before generation.",
+      "html": "<button class=\"ds-rule-chip\" aria-pressed=\"false\">色彩气候</button><button class=\"ds-rule-chip is-active\" aria-pressed=\"true\">构图重心</button>",
+      "css": ".ds-rule-chip{border:1px solid var(--line,#cfc5b5);background:transparent;color:var(--ink,#121212);padding:8px 10px;border-radius:999px;font:500 12px/1.3 'DM Sans','Noto Sans SC',sans-serif;cursor:pointer}.ds-rule-chip:hover{background:rgba(255,255,255,.45)}.ds-rule-chip.is-active,.ds-rule-chip[aria-pressed='true']{background:var(--ink,#121212);color:#fff;border-color:var(--ink,#121212)}.ds-rule-chip:focus-visible{outline:3px solid var(--blue,#173be8);outline-offset:3px}"
+    },
+    {
+      "name": "Proofing Intent Field",
+      "kind": "input",
+      "refersTo": "input-proof",
+      "description": "A warm-white field for the creator's one-baton intent.",
+      "html": "<label class=\"ds-field\"><span>给这一棒的创作意图</span><textarea>让城市信号变得更明亮。</textarea></label>",
+      "css": ".ds-field{display:grid;gap:7px;color:var(--ink,#121212);font-family:'DM Sans','Noto Sans SC',sans-serif}.ds-field>span{font-size:12px;font-weight:700}.ds-field textarea{min-height:110px;border:1px solid var(--line,#cfc5b5);background:#fffdf8;color:var(--ink,#121212);padding:13px;border-radius:9px;font:400 16px/1.55 'DM Sans','Noto Sans SC',sans-serif;resize:vertical}.ds-field textarea:focus{border-color:var(--blue,#173be8)}.ds-field textarea:focus-visible{outline:3px solid var(--blue,#173be8);outline-offset:3px}"
+    },
+    {
+      "name": "Proofing Table",
+      "kind": "card",
+      "refersTo": "card-proof",
+      "description": "The signature split work surface for rule controls and candidate proofs.",
+      "html": "<section class=\"ds-proof-table\"><div><strong>接力规则</strong><p>只改变一个视觉维度。</p></div><div><strong>候选版本</strong><p>选择一个版本继续传递。</p></div></section>",
+      "css": ".ds-proof-table{display:grid;grid-template-columns:.75fr 1.25fr;border:1px solid var(--ink,#121212);background:var(--paper-2,#fbf7ef);color:var(--ink,#121212);box-shadow:0 22px 55px rgba(34,26,15,.14);font-family:'DM Sans','Noto Sans SC',sans-serif}.ds-proof-table>div{padding:28px}.ds-proof-table>div+div{border-left:1px solid var(--ink,#121212)}.ds-proof-table strong{font-size:18px}.ds-proof-table p{color:var(--ink-soft,#4e4a43);margin:12px 0 0}.ds-proof-table:focus-within{outline:3px solid var(--blue,#173be8);outline-offset:3px}@media(max-width:700px){.ds-proof-table{grid-template-columns:1fr}.ds-proof-table>div+div{border-left:0;border-top:1px solid var(--ink,#121212)}}"
+    },
+    {
+      "name": "Candidate Proof",
+      "kind": "card",
+      "refersTo": "candidate-card",
+      "description": "An artwork proof that gains a blue registration border when selected.",
+      "html": "<button class=\"ds-candidate is-selected\" aria-pressed=\"true\"><span class=\"ds-candidate-art\"></span><span><strong>增强信号</strong><small>候选 B</small></span></button>",
+      "css": ".ds-candidate{width:180px;border:1px solid var(--line,#cfc5b5);background:var(--paper,#f2eadb);color:var(--ink,#121212);padding:6px;border-radius:11px;text-align:left;cursor:pointer;transition:transform .2s ease,border-color .2s ease}.ds-candidate:hover{transform:translateY(-4px)}.ds-candidate.is-selected,.ds-candidate[aria-pressed='true']{border:3px solid var(--blue,#173be8);padding:4px}.ds-candidate:focus-visible{outline:3px solid var(--blue,#173be8);outline-offset:3px}.ds-candidate-art{display:block;aspect-ratio:3/4;border-radius:7px;background:linear-gradient(145deg,var(--blue,#173be8),var(--red,#ff482e) 55%,var(--acid,#d9ff2f))}.ds-candidate>span:last-child{display:flex;justify-content:space-between;align-items:center;padding:9px 3px 3px;font:500 11px/1.3 'DM Sans','Noto Sans SC',sans-serif}.ds-candidate small{color:var(--ink-soft,#4e4a43)}"
+    },
+    {
+      "name": "Top Navigation Item",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "A quiet workbench destination that fills with fresh proof paper when active.",
+      "html": "<nav class=\"ds-nav\"><a href=\"#\">接力广场</a><a class=\"is-active\" href=\"#\">创作台</a></nav>",
+      "css": ".ds-nav{display:flex;gap:4px;font-family:'DM Sans','Noto Sans SC',sans-serif}.ds-nav a{padding:8px 13px;border-radius:9px;text-decoration:none;font-size:14px;font-weight:600;color:var(--ink-soft,#4e4a43)}.ds-nav a:hover,.ds-nav a.is-active{background:var(--paper-2,#fbf7ef);color:var(--ink,#121212)}.ds-nav a:focus-visible{outline:3px solid var(--blue,#173be8);outline-offset:3px}"
+    },
+    {
+      "name": "Lineage Rail Node",
+      "kind": "custom",
+      "refersTo": "lineage-node",
+      "description": "A connected artwork node used as both provenance and navigation.",
+      "html": "<div class=\"ds-rail\"><button class=\"ds-rail-node\"><span></span></button><button class=\"ds-rail-node is-active\"><span></span></button><button class=\"ds-rail-node\"><span></span></button></div>",
+      "css": ".ds-rail{display:flex;gap:8px}.ds-rail-node{width:62px;height:72px;border:1px solid var(--line,#cfc5b5);border-radius:9px;background:var(--paper-2,#fbf7ef);padding:5px;position:relative;cursor:pointer}.ds-rail-node:not(:last-child)::after{content:'';position:absolute;top:50%;right:-9px;width:8px;border-top:1px solid var(--ink,#121212)}.ds-rail-node span{display:block;width:100%;height:100%;border-radius:5px;background:linear-gradient(145deg,var(--red,#ff482e),var(--blue,#173be8))}.ds-rail-node:hover,.ds-rail-node.is-active{border:2px solid var(--blue,#173be8);padding:4px}.ds-rail-node:focus-visible{outline:3px solid var(--blue,#173be8);outline-offset:3px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Relay Proofing Table / 接力校样台",
+    "overview": "AI Remix Relay looks like an active screen-printing workbench: warm stock, dense ink, bright registration colors, proof sheets, and marks that show how one version leads to the next. The art leads; interface chrome behaves like practical studio equipment rather than a dashboard.\n\nThe system makes lineage tangible. Borders, rails, parent-child connectors, candidate proofs, and receipts show that an AI work is a baton to pass onward, not a terminal output. Product truth stays visible in compact status language instead of being buried behind Web3 vocabulary.",
+    "keyCharacteristics": [
+      "Warm paper field with near-black structural ink.",
+      "Electric blue for the primary handoff action; red and acid yellow as registration accents.",
+      "Oversized, tightly tracked headlines paired with compact proofing labels.",
+      "Flat bordered surfaces, interrupted by one deliberate proof-table shadow.",
+      "Artwork, node rails, and lineage diagrams act as navigation."
+    ],
+    "rules": [
+      { "name": "The Registration Ink Rule", "body": "Blue marks the action or selection; red and acid yellow add authored emphasis. Do not distribute all three accents evenly across a surface.", "section": "colors" },
+      { "name": "The Honest Status Rule", "body": "Green and amber describe verifiable state only; they do not decorate neutral content.", "section": "colors" },
+      { "name": "The Poster/Proof Rule", "body": "Headlines speak in short, oversized lines; operational truth uses compact labels and tabular numerals.", "section": "typography" },
+      { "name": "The Art-First Rule", "body": "In task entry views, a current work and its lineage occupy at least as much visual authority as its controls.", "section": "layout" },
+      { "name": "The One Lift Rule", "body": "Keep working surfaces flat by default; reserve strong elevation for the proofing table, the active drawer, or a direct hover response.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do let artwork, candidate proofs, and lineage nodes carry navigation.",
+      "Do use blue consistently for the next consequential action, selection, and focus.",
+      "Do expose real, local, pending, and unconnected states in plain language.",
+      "Do collapse the workbench into a linear mobile flow without hiding the creative loop."
+    ],
+    "donts": [
+      "Don't turn the home surface into a KPI dashboard, admin table, or wallet-first portal.",
+      "Don't use every accent color on every component; registration inks need rarity.",
+      "Don't add generic glassmorphism, gradient washes, or ornamental shadows.",
+      "Don't claim AI, Circuit, contract, payment, or publishing integrations without verifiable evidence."
+    ]
+  }
+}

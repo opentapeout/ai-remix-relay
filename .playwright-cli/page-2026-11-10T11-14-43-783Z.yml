@@ -1,0 +1,248 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - link "AI Remix Relay" [ref=e4] [cursor=pointer]:
+        - /url: "#relay"
+      - navigation "主导航" [ref=e9]:
+        - link "接力广场" [ref=e10] [cursor=pointer]:
+          - /url: "#relay"
+        - link "创作台" [ref=e11] [cursor=pointer]:
+          - /url: "#studio"
+        - link "作品谱系" [ref=e12] [cursor=pointer]:
+          - /url: "#lineage"
+        - link "创作者计划" [ref=e13] [cursor=pointer]:
+          - /url: "#economy"
+      - generic [ref=e14]:
+        - generic [ref=e15]: X Layer 196 · 75,540,109
+        - button "发起 Seed" [ref=e18] [cursor=pointer]
+    - generic [ref=e19]:
+      - complementary "可参与的 Relay" [ref=e20]:
+        - heading "现在可以接" [level=2] [ref=e21]
+        - generic [ref=e22]:
+          - button "City Signal 2049 8 棒 3 个分支 开放" [ref=e23] [cursor=pointer]:
+            - generic [ref=e24]: City Signal 2049
+            - generic [ref=e25]:
+              - generic [ref=e26]: 8 棒
+              - generic [ref=e27]: 3 个分支
+              - generic [ref=e28]: 开放
+          - button "Aa Tomorrow’s Alphabet 12 棒 5 个分支" [ref=e29] [cursor=pointer]:
+            - generic: Aa
+            - generic [ref=e30]: Tomorrow’s Alphabet
+            - generic [ref=e31]:
+              - generic [ref=e32]: 12 棒
+              - generic [ref=e33]: 5 个分支
+          - button "Noise Becomes Map 6 棒 2 个分支" [ref=e34] [cursor=pointer]:
+            - generic [ref=e35]: Noise Becomes Map
+            - generic [ref=e36]:
+              - generic [ref=e37]: 6 棒
+              - generic [ref=e38]: 2 个分支
+        - generic [ref=e39]:
+          - button [ref=e40] [cursor=pointer]:
+            - text: 收到的下一棒
+            - strong [ref=e44]: "2"
+          - button "我的创作" [ref=e45] [cursor=pointer]
+      - main [ref=e49]:
+        - generic [ref=e50]:
+          - generic [ref=e53]:
+            - generic [ref=e54]:
+              - heading "City Signal 2049" [level=1] [ref=e55]
+              - paragraph [ref=e56]: 从一座漂浮城市开始，每一棒只能改变一个视觉维度。现在轮到你。
+            - generic [ref=e57]:
+              - strong [ref=e58]: NODE 04 / 05
+              - text: by @guest
+          - generic [ref=e59]:
+            - heading "别从空白开始。 接过这一棒。" [level=2] [ref=e60]: 别从空白开始。接过这一棒。
+            - paragraph [ref=e61]: 选一个已有版本，告诉 AI 这一棒只改变什么。你的结果会成为下一位参与者的新起点。
+            - generic [ref=e62]:
+              - generic [ref=e63]: G
+              - generic [ref=e64]:
+                - generic [ref=e65]: "@guest 传来的 色彩气候"
+                - generic [ref=e66]: 父节点 N2 · 可继续接力
+              - generic [ref=e67]: 可接力
+            - generic "本棒规则" [ref=e68]:
+              - generic [ref=e69]:
+                - strong [ref=e72]: 只改变一个视觉维度
+                - generic [ref=e73]: RelayRule 01
+              - generic [ref=e74]:
+                - strong [ref=e77]: 保留父作品署名
+                - generic [ref=e78]: Attribution
+              - generic [ref=e79]:
+                - strong [ref=e82]: 允许产生新分支
+                - generic [ref=e83]: Open branch
+            - generic [ref=e84]:
+              - button "接下一棒" [ref=e85] [cursor=pointer]
+              - button "分享 Relay" [ref=e88] [cursor=pointer]
+            - generic [ref=e95]: 浏览与试生成不需要钱包，发布时才请求连接。
+            - generic [ref=e99]:
+              - generic [ref=e100]:
+                - generic [ref=e101]: 这条 Relay 的当前路径
+                - link "查看全部分支" [ref=e102] [cursor=pointer]:
+                  - /url: "#lineage"
+              - generic [ref=e103]:
+                - button "查看 n0" [ref=e269] [cursor=pointer]
+                - button "查看 n1" [ref=e270] [cursor=pointer]
+                - button "查看 n2" [ref=e271] [cursor=pointer]
+                - button "查看 n4" [ref=e272] [cursor=pointer]
+        - generic [ref=e108]:
+          - generic [ref=e109]:
+            - heading "这一棒， 你想改变什么？" [level=2] [ref=e110]: 这一棒，你想改变什么？
+            - paragraph [ref=e111]: 先锁定一个变化维度，再补充你的想法。首版使用透明标注的演示生成器验证交互；真实 AI Provider 接入前不会冒充正式生成。
+          - generic [ref=e112]:
+            - generic [ref=e113]:
+              - heading "接力规则" [level=3] [ref=e114]
+              - generic [ref=e115]:
+                - button "色彩气候" [ref=e116] [cursor=pointer]
+                - button "构图重心" [ref=e117] [cursor=pointer]
+                - button "时代氛围" [ref=e118] [cursor=pointer]
+                - button "文字节奏" [ref=e119] [cursor=pointer]
+              - generic [ref=e120]:
+                - generic [ref=e121]: 给这一棒的创作意图
+                - textbox "给这一棒的创作意图" [ref=e122]: 让城市信号变得更明亮，像刚刚收到来自未来的好消息。
+              - generic [ref=e123]: 当前能力：演示生成器候选使用项目内置视觉资产生成，用于验证“选择—发布—接力”流程。真实 AI API、价格与签名回执仍待接入。
+              - button "重新生成 3 个候选" [ref=e267] [cursor=pointer]
+            - generic [ref=e125]:
+              - heading "候选版本" [level=3] [ref=e126]
+              - generic [ref=e127]:
+                - button "保留结构 候选 A" [ref=e128] [cursor=pointer]:
+                  - generic [ref=e129]:
+                    - generic [ref=e130]: 保留结构
+                    - generic [ref=e131]: 候选 A
+                - button "增强信号 候选 B" [ref=e132] [cursor=pointer]:
+                  - generic [ref=e133]:
+                    - generic [ref=e134]: 增强信号
+                    - generic [ref=e135]: 候选 B
+                - button "打开分支 候选 C" [ref=e136] [cursor=pointer]:
+                  - generic [ref=e137]:
+                    - generic [ref=e138]: 打开分支
+                    - generic [ref=e139]: 候选 C
+              - generic [ref=e140]:
+                - generic [ref=e141]:
+                  - generic [ref=e268]: 3 个候选已准备
+                  - text: 选择一个版本并发布为下一棒
+                - button "发布为下一棒" [active] [ref=e143] [cursor=pointer]
+        - generic [ref=e145]:
+          - generic [ref=e146]:
+            - heading "作品不是终点。 它会长出新的分支。" [level=2] [ref=e147]: 作品不是终点。它会长出新的分支。
+            - paragraph [ref=e148]: 每个节点都保留父作品、创作者、变化规则和授权。下面的演示谱系会随着你发布新节点即时更新。
+          - generic [ref=e149]:
+            - generic [ref=e150]:
+              - heading "City Signal 2049 / Lineage" [level=3] [ref=e151]
+              - generic [ref=e152]:
+                - generic [ref=e153]: — 主路径
+                - generic [ref=e154]: └ 分支
+                - generic [ref=e155]: ● 当前节点
+            - generic [ref=e156]:
+              - button "Seed @miko" [ref=e273] [cursor=pointer]:
+                - generic [ref=e275]:
+                  - generic [ref=e276]: Seed
+                  - generic [ref=e277]: "@miko"
+              - button "Signal @lin" [ref=e278] [cursor=pointer]:
+                - generic [ref=e280]:
+                  - generic [ref=e281]: Signal
+                  - generic [ref=e282]: "@lin"
+              - button "Current @sola" [ref=e283] [cursor=pointer]:
+                - generic [ref=e285]:
+                  - generic [ref=e286]: Current
+                  - generic [ref=e287]: "@sola"
+              - button "Quiet branch @noon" [ref=e288] [cursor=pointer]:
+                - generic [ref=e290]:
+                  - generic [ref=e291]: Quiet branch
+                  - generic [ref=e292]: "@noon"
+              - button "色彩气候 @guest" [ref=e293] [cursor=pointer]:
+                - generic [ref=e295]:
+                  - generic [ref=e296]: 色彩气候
+                  - generic [ref=e297]: "@guest"
+        - generic [ref=e178]:
+          - generic [ref=e179]:
+            - heading "创作继续发生， 价值也继续流动。" [level=2] [ref=e180]: 创作继续发生，价值也继续流动。
+            - paragraph [ref=e181]: 商业模式围绕真实生成成本和创作者权益，而不是为了上链制造收费点。
+          - generic [ref=e182]:
+            - generic [ref=e183]:
+              - heading "免费加入公开 Relay， 为更好的生成与创作者风格付费。" [level=3] [ref=e184]: 免费加入公开 Relay，为更好的生成与创作者风格付费。
+              - paragraph [ref=e185]: 公开接力提供免费体验额度。高质量模型、独家 Seed、商业授权与创作者风格模板构成清晰付费层。
+              - generic [ref=e186]:
+                - generic [ref=e187]:
+                  - strong [ref=e188]: 3 次
+                  - text: 新用户免费接力
+                - generic [ref=e189]:
+                  - strong [ref=e190]: 按次
+                  - text: 购买 AI remix credits
+                - generic [ref=e191]:
+                  - strong [ref=e192]: 透明
+                  - text: 后续 remix 分成
+            - generic [ref=e193]:
+              - generic [ref=e194]:
+                - generic [ref=e195]: "01"
+                - generic [ref=e196]:
+                  - generic [ref=e197]: Creator Plan
+                  - text: 更多生成额度、私密 Relay、高清导出和商业授权。
+              - generic [ref=e198]:
+                - generic [ref=e199]: "02"
+                - generic [ref=e200]:
+                  - generic [ref=e201]: 付费 Seed 与风格模板
+                  - text: 创作者决定价格和允许的二创方式。
+              - generic [ref=e202]:
+                - generic [ref=e203]: "03"
+                - generic [ref=e204]:
+                  - generic [ref=e205]: 后续贡献分成
+                  - text: 父节点可从后续付费 remix 获得透明分成。
+              - generic [ref=e206]:
+                - generic [ref=e207]: "04"
+                - generic [ref=e208]:
+                  - generic [ref=e209]: 平台服务费
+                  - text: 从实际 AI 调用和付费 Relay 中收取，不向浏览者收费。
+        - generic [ref=e212]:
+          - generic [ref=e213]:
+            - heading "真实进度，不用标签冒充集成。" [level=3] [ref=e214]
+            - paragraph [ref=e215]: 只有产生可核验地址、交易或回执的能力，才会在最终提交材料中标为完成。
+          - generic [ref=e216]:
+            - text: X Layer
+            - generic [ref=e217]: 真实 RPC 读取成功
+            - code [ref=e218]: chainId 196 · block 75,540,109
+          - generic [ref=e219]:
+            - text: TapeOut RelayRule
+            - generic [ref=e220]: 待部署
+            - code [ref=e221]: Processor / Circuit ID 尚未生成
+          - generic [ref=e222]:
+            - text: RelayRegistry
+            - generic [ref=e223]: 待部署
+            - code [ref=e224]: 当前发布仅保存在本机浏览器
+    - contentinfo [ref=e225]:
+      - strong [ref=e226]: AI Remix Relay
+      - generic [ref=e227]: 当前为可交互产品原型 · 真实 AI、TapeOut Circuit 与 X Layer 写入仍按路线接入
+      - button "重置演示数据" [ref=e228] [cursor=pointer]
+  - complementary [ref=e229]:
+    - generic [ref=e230]:
+      - heading "Relay Receipt" [level=2] [ref=e298]
+      - button "关闭" [ref=e299] [cursor=pointer]
+    - paragraph [ref=e235]: 这一棒已经加入本地作品谱系。下面明确区分真实内容与尚未接入的协议字段。
+    - generic [ref=e236]:
+      - generic [ref=e237]:
+        - generic [ref=e238]: Node
+        - generic [ref=e239]: N4
+      - generic [ref=e240]:
+        - generic [ref=e241]: Parent
+        - generic [ref=e242]: N2
+      - generic [ref=e243]:
+        - generic [ref=e244]: Change rule
+        - generic [ref=e245]: 色彩气候
+      - generic [ref=e246]:
+        - generic [ref=e247]: Creator
+        - generic [ref=e248]: Guest creator
+      - generic [ref=e249]:
+        - generic [ref=e250]: Local hash
+        - code [ref=e251]: local-c40ef913
+      - generic [ref=e252]:
+        - generic [ref=e253]: AI receipt
+        - generic [ref=e254]: Pending provider integration
+      - generic [ref=e255]:
+        - generic [ref=e256]: Circuit result
+        - generic [ref=e257]: Local preview only
+      - generic [ref=e258]:
+        - generic [ref=e259]: X Layer tx
+        - generic [ref=e260]: Not submitted
+    - generic [ref=e261]:
+      - heading "把下一棒交出去" [level=3] [ref=e300]
+      - paragraph [ref=e263]: 复制这条 Relay 的邀请链接。当前链接使用本地节点 ID；接入后端后会变成跨用户可访问的真实交接。
+      - button "复制接力链接" [ref=e301] [cursor=pointer]
+  - status: 下一棒已加入本地谱系

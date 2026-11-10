@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="AI Remix Relay — 把一次 AI 生成变成一场可以继续接力的多人创作。" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23121212'/%3E%3Cpath d='M8 16h14m-5-5 5 5-5 5M8 10v12' fill='none' stroke='%23f2eadb' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <title>AI Remix Relay — 接下一棒</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap');
+    :root{
+      --paper:#f2eadb;--paper-2:#fbf7ef;--ink:#121212;--ink-soft:#4e4a43;
+      --blue:#173be8;--red:#ff482e;--acid:#d9ff2f;--line:#cfc5b5;
+      --green:#16734c;--amber:#a85f00;--shadow:0 22px 55px rgba(34,26,15,.14);
+      --radius:14px;--max:1480px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--paper);color:var(--ink);font-family:"DM Sans","Noto Sans SC",sans-serif;line-height:1.55}
+    body::selection{background:var(--blue);color:#fff}
+    button,input,textarea{font:inherit}
+    button{color:inherit}
+    a{color:inherit;text-decoration-thickness:1px;text-underline-offset:4px}
+    :focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+    ::-webkit-scrollbar{width:10px;height:10px}
+    ::-webkit-scrollbar-track{background:var(--paper)}
+    ::-webkit-scrollbar-thumb{background:#918777;border:3px solid var(--paper);border-radius:10px}
+    .icon{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .app{min-height:100vh}
+    .topbar{height:72px;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;position:sticky;top:0;z-index:30;background:rgba(242,234,219,.94);backdrop-filter:blur(14px)}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:800;text-decoration:none;letter-spacing:-.02em}
+    .brand-mark{width:34px;height:34px;background:var(--ink);display:grid;place-items:center;color:var(--paper);border-radius:50%}
+    .brand-mark svg{width:20px}
+    .topnav{display:flex;gap:4px;margin-left:44px}
+    .topnav a{padding:8px 13px;border-radius:9px;text-decoration:none;font-size:14px;font-weight:600;color:var(--ink-soft)}
+    .topnav a:hover,.topnav a.active{background:var(--paper-2);color:var(--ink)}
+    .top-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+    .chain-state{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+    .chain-state i{width:7px;height:7px;border-radius:50%;background:#8d877c}
+    .chain-state.live i{background:#21a46c;box-shadow:0 0 0 4px rgba(33,164,108,.13)}
+    .btn{border:0;border-radius:10px;padding:11px 16px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .18s ease,background .18s ease,color .18s ease}
+    .btn:hover{transform:translateY(-2px)}
+    .btn:active{transform:translateY(0)}
+    .btn:disabled{cursor:not-allowed;opacity:.45;transform:none}
+    .btn-dark{background:var(--ink);color:#fff}
+    .btn-blue{background:var(--blue);color:#fff}
+    .btn-acid{background:var(--acid);color:var(--ink)}
+    .btn-line{background:transparent;border:1px solid var(--line)}
+    .btn-small{padding:8px 12px;font-size:13px}
+    .layout{display:grid;grid-template-columns:260px minmax(0,1fr);min-height:calc(100vh - 72px)}
+    .sidebar{border-right:1px solid var(--line);padding:26px 18px;position:sticky;top:72px;height:calc(100vh - 72px);overflow:auto}
+    .sidebar h2{font-size:12px;text-transform:uppercase;letter-spacing:.12em;margin:0 8px 14px;color:#716a60}
+    .feed-list{display:grid;gap:8px}
+    .feed-item{border:1px solid transparent;background:transparent;width:100%;text-align:left;padding:10px;border-radius:12px;cursor:pointer}
+    .feed-item:hover{background:rgba(255,255,255,.45)}
+    .feed-item.active{background:var(--paper-2);border-color:var(--line)}
+    .feed-thumb{height:112px;border-radius:9px;background:#ddd center/cover no-repeat;margin-bottom:9px;position:relative;overflow:hidden}
+    .feed-thumb.triptych{background-image:url('assets/relay-triptych.png');background-size:300% 100%;background-position:left center}
+    .feed-thumb.alt{background:var(--blue)}
+    .feed-thumb.alt::before{content:"";position:absolute;width:70px;height:70px;border-radius:50%;background:var(--red);left:20px;top:16px}
+    .feed-thumb.alt::after{content:"Aa";position:absolute;color:#fff;font-size:52px;font-weight:800;right:14px;bottom:-8px}
+    .feed-thumb.noise{background:var(--ink)}
+    .feed-thumb.noise::before{content:"";position:absolute;inset:18px;background:conic-gradient(from 30deg,var(--acid),var(--blue),var(--red),var(--acid));clip-path:polygon(50% 0,65% 34%,100% 50%,66% 66%,50% 100%,34% 66%,0 50%,34% 34%)}
+    .feed-title{font-size:14px;font-weight:700;display:block}
+    .feed-meta{font-size:11px;color:#716a60;display:flex;gap:8px;margin-top:3px}
+    .side-bottom{border-top:1px solid var(--line);margin-top:22px;padding-top:18px}
+    .side-link{width:100%;border:0;background:transparent;padding:9px 8px;display:flex;align-items:center;gap:10px;cursor:pointer;border-radius:8px;font-size:13px;text-align:left}
+    .side-link:hover{background:rgba(255,255,255,.5)}
+    .main{min-width:0}
+    .stage{min-height:calc(100vh - 72px);display:grid;grid-template-columns:minmax(460px,1.15fr) minmax(360px,.85fr);border-bottom:1px solid var(--line)}
+    .stage-art{position:relative;background:var(--paper-2);overflow:hidden;min-height:720px}
+    .stage-artwork{position:absolute;inset:0;background:url('assets/relay-triptych.png') left center/300% 100% no-repeat;transition:background-position .55s cubic-bezier(.16,1,.3,1),filter .35s ease}
+    .stage-art::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(18,18,18,.06) 1px,transparent 1px),linear-gradient(rgba(18,18,18,.06) 1px,transparent 1px);background-size:48px 48px;mix-blend-mode:multiply;opacity:.25}
+    .art-caption{position:absolute;left:28px;bottom:28px;right:28px;display:flex;align-items:flex-end;justify-content:space-between;z-index:2;color:#fff;text-shadow:0 2px 18px rgba(0,0,0,.45)}
+    .art-caption h1{font-size:clamp(44px,5vw,78px);line-height:.94;letter-spacing:-.04em;max-width:650px;margin:0;font-weight:700}
+    .art-caption p{margin:14px 0 0;font-size:14px;max-width:460px}
+    .edition{font-size:12px;text-align:right;font-variant-numeric:tabular-nums}
+    .stage-panel{padding:42px 42px 32px;display:flex;flex-direction:column;min-width:0;background:var(--paper)}
+    .stage-panel h2{font-size:clamp(34px,3.2vw,58px);line-height:1.02;letter-spacing:-.04em;margin:0;max-width:670px}
+    .stage-panel>p{font-size:17px;color:var(--ink-soft);max-width:620px;margin:18px 0 28px}
+    .current-baton{border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);padding:18px 0;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
+    .avatar{width:42px;height:42px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-weight:800}
+    .baton-copy b{display:block;font-size:14px}
+    .baton-copy span{display:block;font-size:12px;color:var(--ink-soft);margin-top:2px}
+    .open-badge{font-size:11px;font-weight:800;color:var(--green);border:1px solid currentColor;padding:5px 8px;border-radius:999px}
+    .rule-sheet{margin:26px 0 22px;display:grid;gap:0}
+    .rule-row{display:grid;grid-template-columns:22px 1fr auto;gap:10px;padding:11px 0;border-bottom:1px dashed #bdb3a4;font-size:13px;align-items:start}
+    .rule-row svg{margin-top:1px}
+    .rule-row span:last-child{color:#716a60;text-align:right}
+    .stage-actions{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:auto}
+    .stage-note{font-size:11px;color:#716a60;margin-top:10px;display:flex;gap:7px;align-items:center}
+    .lineage-rail{border-top:1px solid var(--line);margin-top:26px;padding-top:17px}
+    .lineage-rail-head{display:flex;justify-content:space-between;font-size:12px;font-weight:700}
+    .rail{display:flex;gap:8px;margin-top:12px;overflow:auto;padding-bottom:7px}
+    .rail-node{flex:0 0 62px;height:72px;border:1px solid var(--line);border-radius:9px;background:var(--paper-2);cursor:pointer;padding:5px;position:relative}
+    .rail-node.active{border:2px solid var(--blue);padding:4px}
+    .rail-node::after{content:"";position:absolute;top:50%;right:-9px;width:8px;border-top:1px solid var(--ink)}
+    .rail-node:last-child::after{display:none}
+    .rail-art{width:100%;height:100%;border-radius:5px;background:url('assets/relay-triptych.png') left center/300% 100% no-repeat}
+    .section{padding:86px 42px;border-bottom:1px solid var(--line)}
+    .section-inner{max-width:var(--max);margin:auto}
+    .section-title{display:flex;justify-content:space-between;gap:40px;align-items:flex-end;margin-bottom:32px}
+    .section-title h2{font-size:clamp(38px,5vw,72px);letter-spacing:-.04em;line-height:.96;margin:0;max-width:860px}
+    .section-title p{max-width:460px;margin:0;color:var(--ink-soft);font-size:15px}
+    .studio{display:grid;grid-template-columns:minmax(300px,.75fr) minmax(0,1.25fr);border:1px solid var(--ink);background:var(--paper-2);box-shadow:var(--shadow)}
+    .studio-control{padding:28px;border-right:1px solid var(--ink)}
+    .studio-control h3,.candidate-area h3{margin:0 0 18px;font-size:18px}
+    .field{display:block;margin:18px 0}
+    .field>span{display:block;font-size:12px;font-weight:700;margin-bottom:7px}
+    textarea{width:100%;min-height:110px;border:1px solid var(--line);background:#fffdf8;padding:13px;border-radius:9px;resize:vertical;color:var(--ink)}
+    textarea:focus{border-color:var(--blue)}
+    .rules{display:flex;flex-wrap:wrap;gap:7px}
+    .rule-chip{border:1px solid var(--line);background:transparent;padding:8px 10px;border-radius:999px;font-size:12px;cursor:pointer}
+    .rule-chip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+    .engine-disclosure{background:#efe7d8;border:1px solid var(--line);padding:12px;border-radius:9px;font-size:11px;color:var(--ink-soft);margin:17px 0}
+    .engine-disclosure b{color:var(--ink)}
+    .candidate-area{padding:28px;min-width:0}
+    .candidate-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .candidate{border:1px solid var(--line);background:var(--paper);padding:6px;border-radius:11px;cursor:pointer;text-align:left;transition:transform .2s ease,border-color .2s ease}
+    .candidate:hover{transform:translateY(-4px)}
+    .candidate:disabled{cursor:not-allowed;opacity:.48;transform:none;filter:saturate(.55)}
+    .candidate.selected{border:3px solid var(--blue);padding:4px}
+    .candidate-art{aspect-ratio:3/4;border-radius:7px;background:url('assets/relay-triptych.png') left center/300% 100% no-repeat}
+    .candidate:nth-child(2) .candidate-art{background-position:center center}
+    .candidate:nth-child(3) .candidate-art{background-position:right center}
+    .candidate-meta{display:flex;justify-content:space-between;align-items:center;padding:9px 3px 3px;font-size:11px}
+    .candidate-meta b{font-size:12px}
+    .publish-bar{margin-top:18px;border-top:1px solid var(--line);padding-top:18px;display:flex;align-items:center;gap:12px;justify-content:space-between}
+    .publish-status{font-size:12px;color:var(--ink-soft)}
+    .publish-status b{display:block;color:var(--green)}
+    .graph-shell{background:var(--ink);color:var(--paper);padding:34px;min-height:560px;overflow:auto}
+    .graph-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+    .graph-toolbar h3{margin:0;font-size:18px}
+    .graph-legend{display:flex;gap:14px;font-size:11px;color:#aaa397}
+    .graph{min-width:900px;display:grid;grid-template-columns:repeat(4,180px);grid-template-rows:repeat(3,150px);column-gap:68px;row-gap:24px;position:relative}
+    .graph::before{content:"";position:absolute;left:90px;right:120px;top:72px;border-top:1px solid #827c72}
+    .graph-card{background:#24231f;border:1px solid #4d4942;border-radius:12px;padding:8px;position:relative;z-index:2;cursor:pointer}
+    .graph-card:hover,.graph-card.active{border-color:var(--acid)}
+    .graph-card.branch::before{content:"";position:absolute;width:70px;height:76px;border-left:1px solid #827c72;border-bottom:1px solid #827c72;left:-36px;top:-40px;z-index:-1}
+    .graph-art{height:88px;border-radius:7px;background:url('assets/relay-triptych.png') left center/300% 100% no-repeat}
+    .graph-copy{display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:#aaa397}
+    .graph-copy b{font-size:11px;color:#fff}
+    .node0{grid-column:1;grid-row:1}.node1{grid-column:2;grid-row:1}.node2{grid-column:3;grid-row:1}.node3{grid-column:2;grid-row:2}.node4{grid-column:4;grid-row:1}
+    .economy{display:grid;grid-template-columns:1.15fr .85fr;gap:26px}
+    .economy-main{background:var(--blue);color:#fff;padding:38px;border-radius:var(--radius)}
+    .economy-main h3{font-size:clamp(28px,4vw,50px);line-height:1.04;letter-spacing:-.03em;margin:0 0 18px}
+    .economy-main p{max-width:580px;color:#dfe4ff}
+    .price-row{margin-top:34px;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(255,255,255,.3)}
+    .price-row div{padding:17px 12px 0 0}
+    .price-row strong{font-size:24px;display:block}
+    .price-row span{font-size:11px;color:#dfe4ff}
+    .economy-side{display:grid;gap:12px}
+    .eco-line{border-top:1px solid var(--ink);padding:15px 0;display:grid;grid-template-columns:36px 1fr;gap:14px}
+    .eco-line span:first-child{font-weight:800;color:var(--blue)}
+    .eco-line b{display:block}
+    .eco-line small{color:var(--ink-soft)}
+    .evidence-strip{display:grid;grid-template-columns:1.1fr repeat(3,1fr);border:1px solid var(--line)}
+    .evidence-intro,.evidence-item{padding:24px;border-right:1px solid var(--line)}
+    .evidence-item:last-child{border-right:0}
+    .evidence-intro h3{margin:0 0 9px;font-size:18px}
+    .evidence-intro p{margin:0;color:var(--ink-soft);font-size:12px}
+    .evidence-item span{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#716a60}
+    .evidence-item b{display:block;margin:8px 0;font-size:14px}
+    .evidence-item code{font-size:10px;word-break:break-all;color:#716a60}
+    .status-real{color:var(--green)}.status-pending{color:var(--amber)}
+    .footer{padding:34px 42px;display:flex;align-items:center;justify-content:space-between;gap:20px;font-size:12px}
+    .footer strong{font-size:16px}
+    .toast{position:fixed;right:24px;bottom:24px;background:var(--ink);color:#fff;max-width:360px;padding:13px 16px;border-radius:10px;box-shadow:var(--shadow);transform:translateY(25px);opacity:0;pointer-events:none;transition:.25s ease;z-index:50;font-size:13px}
+    .toast.show{transform:none;opacity:1}
+    .drawer{position:fixed;right:0;top:72px;bottom:0;width:min(440px,100%);background:var(--paper-2);z-index:40;border-left:1px solid var(--ink);box-shadow:-20px 0 55px rgba(0,0,0,.18);transform:translateX(105%);transition:transform .35s cubic-bezier(.16,1,.3,1);padding:28px;overflow:auto}
+    .drawer.open{transform:none}
+    .drawer-head{display:flex;justify-content:space-between;align-items:center}
+    .drawer-head h2{margin:0;font-size:28px;letter-spacing:-.03em}
+    .icon-btn{border:1px solid var(--line);background:transparent;border-radius:50%;width:38px;height:38px;display:grid;place-items:center;cursor:pointer}
+    .receipt{border-top:1px solid var(--ink);margin-top:28px;padding-top:18px}
+    .receipt-row{display:grid;grid-template-columns:110px 1fr;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:12px}
+    .receipt-row span{color:#716a60}
+    .receipt-row b,.receipt-row code{font-size:11px;word-break:break-all}
+    .handoff-box{margin-top:24px;background:var(--acid);padding:18px;border-radius:11px}
+    .handoff-box h3{margin:0 0 8px}
+    .handoff-box p{font-size:12px;margin:0 0 14px}
+    @media(max-width:1100px){
+      .layout{grid-template-columns:210px minmax(0,1fr)}
+      .stage{grid-template-columns:1fr}.stage-art{min-height:620px}.stage-panel{padding:36px}
+      .studio{grid-template-columns:1fr}.studio-control{border-right:0;border-bottom:1px solid var(--ink)}
+      .economy{grid-template-columns:1fr}.evidence-strip{grid-template-columns:1fr 1fr}
+      .evidence-intro,.evidence-item{border-bottom:1px solid var(--line)}
+    }
+    @media(max-width:760px){
+      .topbar{padding:0 16px}.brand span:last-child{display:none}.topnav{margin-left:10px}.topnav a{display:none}.topnav a.active{display:block}.chain-state{display:none}
+      .layout{display:block}.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:14px 16px}
+      .sidebar h2,.side-bottom{display:none}.feed-list{display:flex;overflow:auto}.feed-item{flex:0 0 190px}.feed-thumb{height:88px}
+      .stage{min-height:auto}.stage-art{min-height:510px}.stage-panel{padding:28px 20px}.art-caption{left:20px;bottom:20px;right:20px}.art-caption h1{font-size:42px}.edition{display:none}
+      .section{padding:64px 20px}.section-title{display:block}.section-title p{margin-top:18px}.candidate-grid{grid-template-columns:1fr}.candidate{display:grid;grid-template-columns:110px 1fr}.candidate-art{aspect-ratio:1}.candidate-meta{padding:12px}
+      .publish-bar{display:block}.publish-bar .btn{width:100%;margin-top:14px}.graph-shell{margin-left:-20px;margin-right:-20px;padding:22px 20px}
+      .price-row{grid-template-columns:1fr}.evidence-strip{grid-template-columns:1fr}.evidence-intro,.evidence-item{border-right:0}.footer{padding:28px 20px;display:block}.footer span{display:block;margin-top:10px}
+    }
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+  </style>
+</head>
+<body>
+  <!--
+  THESIS: AI 作品不是终点，而是一根会继续传递的创作接力棒；拒绝后台表格式产品首页。
+  OWN-WORLD: 丝网印刷工作台——暖纸、深墨、电蓝、朱红、酸性黄；作品谱系本身就是导航。
+  STORY: 访客先看到一条正在生长的 Relay，接下一棒，选择规则与候选，然后发布并交给下一位。
+  FIRST VIEWPORT: 左侧大幅当前作品，右侧接力规则与主行动，底部用节点轨道展示父子谱系。
+  FORM: Printmaker proofing table，grounded direction #5，seed 3af5ad26。
+  FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+  -->
+  <div class="app">
+    <header class="topbar">
+      <a class="brand" href="#relay">
+        <span class="brand-mark" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h12"/><path d="m13 7 5 5-5 5"/><path d="M5 7v10"/></svg></span>
+        <span>AI Remix Relay</span>
+      </a>
+      <nav class="topnav" aria-label="主导航">
+        <a class="active" href="#relay">接力广场</a>
+        <a href="#studio">创作台</a>
+        <a href="#lineage">作品谱系</a>
+        <a href="#economy">创作者计划</a>
+      </nav>
+      <div class="top-actions">
+        <span class="chain-state" id="chainState"><i></i><span id="chainText">读取 X Layer…</span></span>
+        <button class="btn btn-dark btn-small" id="createSeed" type="button">发起 Seed</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar" aria-label="可参与的 Relay">
+        <h2>现在可以接</h2>
+        <div class="feed-list">
+          <button class="feed-item active" type="button" data-relay="city">
+            <span class="feed-thumb triptych"></span>
+            <span class="feed-title">City Signal 2049</span>
+            <span class="feed-meta"><span>8 棒</span><span>3 个分支</span><span>开放</span></span>
+          </button>
+          <button class="feed-item" type="button" data-relay="alphabet">
+            <span class="feed-thumb alt"></span>
+            <span class="feed-title">Tomorrow’s Alphabet</span>
+            <span class="feed-meta"><span>12 棒</span><span>5 个分支</span></span>
+          </button>
+          <button class="feed-item" type="button" data-relay="noise">
+            <span class="feed-thumb noise"></span>
+            <span class="feed-title">Noise Becomes Map</span>
+            <span class="feed-meta"><span>6 棒</span><span>2 个分支</span></span>
+          </button>
+        </div>
+        <div class="side-bottom">
+          <button class="side-link" type="button" id="openInbox"><svg class="icon" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="m4 13 4 2h8l4-2"/></svg>收到的下一棒 <strong style="margin-left:auto">2</strong></button>
+          <button class="side-link" type="button" id="openMine"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 4-7 8-7s7 2 8 7"/></svg>我的创作</button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <section class="stage" id="relay">
+          <div class="stage-art">
+            <div class="stage-artwork" id="stageArtwork"></div>
+            <div class="art-caption">
+              <div><h1 id="relayTitle">City Signal 2049</h1><p id="relayCaption">从一座漂浮城市开始，每一棒只能改变一个视觉维度。现在轮到你。</p></div>
+              <div class="edition"><strong id="nodeEdition">NODE 03 / 08</strong><br><span id="nodeCreator">by @sola</span></div>
+            </div>
+          </div>
+          <div class="stage-panel">
+            <h2>别从空白开始。<br>接过这一棒。</h2>
+            <p>选一个已有版本，告诉 AI 这一棒只改变什么。你的结果会成为下一位参与者的新起点。</p>
+            <div class="current-baton">
+              <span class="avatar" id="creatorAvatar">S</span>
+              <span class="baton-copy"><b id="batonName">@sola 传来的第 3 棒</b><span id="batonTime">18 分钟前 · 父节点 NODE 02</span></span>
+              <span class="open-badge">可接力</span>
+            </div>
+            <div class="rule-sheet" aria-label="本棒规则">
+              <div class="rule-row"><svg class="icon" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg><strong>只改变一个视觉维度</strong><span>RelayRule 01</span></div>
+              <div class="rule-row"><svg class="icon" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg><strong>保留父作品署名</strong><span>Attribution</span></div>
+              <div class="rule-row"><svg class="icon" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg><strong>允许产生新分支</strong><span>Open branch</span></div>
+            </div>
+            <div class="stage-actions">
+              <button class="btn btn-blue" id="takeBaton" type="button">接下一棒 <svg class="icon" viewBox="0 0 24 24"><path d="M5 12h13"/><path d="m14 8 4 4-4 4"/></svg></button>
+              <button class="btn btn-line" id="shareRelay" type="button" aria-label="分享 Relay"><svg class="icon" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m9 11 6-4"/><path d="m9 13 6 4"/></svg></button>
+            </div>
+            <span class="stage-note"><svg class="icon" viewBox="0 0 24 24" style="width:15px"><path d="M12 3 4 7v5c0 5 3 8 8 9 5-1 8-4 8-9V7z"/><path d="m9 12 2 2 4-4"/></svg>浏览、演示生成与本地发布都不需要钱包；接入 X Layer 后，仅在链上发布时连接。</span>
+            <div class="lineage-rail">
+              <div class="lineage-rail-head"><span>这条 Relay 的当前路径</span><a href="#lineage">查看全部分支</a></div>
+              <div class="rail" id="rail"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="studio">
+          <div class="section-inner">
+            <div class="section-title">
+              <h2>这一棒，<br>你想改变什么？</h2>
+              <p>先锁定一个变化维度，再补充你的想法。首版使用透明标注的演示生成器验证交互；真实 AI Provider 接入前不会冒充正式生成。</p>
+            </div>
+            <div class="studio">
+              <div class="studio-control">
+                <h3>接力规则</h3>
+                <div class="rules" id="ruleChips">
+                  <button class="rule-chip active" type="button" data-rule="色彩气候" aria-pressed="true">色彩气候</button>
+                  <button class="rule-chip" type="button" data-rule="构图重心" aria-pressed="false">构图重心</button>
+                  <button class="rule-chip" type="button" data-rule="时代氛围" aria-pressed="false">时代氛围</button>
+                  <button class="rule-chip" type="button" data-rule="文字节奏" aria-pressed="false">文字节奏</button>
+                </div>
+                <label class="field"><span>给这一棒的创作意图</span><textarea id="promptInput">让城市信号变得更明亮，像刚刚收到来自未来的好消息。</textarea></label>
+                <div class="engine-disclosure"><b>当前能力：演示生成器</b><br>候选使用项目内置视觉资产生成，用于验证“选择—发布—接力”流程。真实 AI API、价格与签名回执仍待接入。</div>
+                <button class="btn btn-dark" id="generateCandidates" type="button" style="width:100%">生成 3 个候选</button>
+              </div>
+              <div class="candidate-area">
+                <h3>候选版本</h3>
+                <div class="candidate-grid" id="candidateGrid">
+                  <button class="candidate" type="button" data-candidate="0" aria-pressed="false" disabled><span class="candidate-art"></span><span class="candidate-meta"><b>保留结构</b><span>候选 A</span></span></button>
+                  <button class="candidate" type="button" data-candidate="1" aria-pressed="false" disabled><span class="candidate-art"></span><span class="candidate-meta"><b>增强信号</b><span>候选 B</span></span></button>
+                  <button class="candidate" type="button" data-candidate="2" aria-pressed="false" disabled><span class="candidate-art"></span><span class="candidate-meta"><b>打开分支</b><span>候选 C</span></span></button>
+                </div>
+                <div class="publish-bar">
+                  <span class="publish-status" id="publishStatus"><b>本地规则预检通过</b>尚未调用真实 TapeOut Circuit</span>
+                  <button class="btn btn-blue" id="publishNode" type="button" disabled>生成后发布到本地谱系</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="lineage">
+          <div class="section-inner">
+            <div class="section-title">
+              <h2>作品不是终点。<br>它会长出新的分支。</h2>
+              <p>每个节点都保留父作品、创作者、变化规则和授权。下面的演示谱系会随着你发布新节点即时更新。</p>
+            </div>
+            <div class="graph-shell">
+              <div class="graph-toolbar"><h3>City Signal 2049 / Lineage</h3><div class="graph-legend"><span>— 主路径</span><span>└ 分支</span><span style="color:var(--acid)">● 当前节点</span></div></div>
+              <div class="graph" id="graph"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="economy">
+          <div class="section-inner">
+            <div class="section-title"><h2>创作继续发生，<br>价值也继续流动。</h2><p>商业模式围绕真实生成成本和创作者权益，而不是为了上链制造收费点。</p></div>
+            <div class="economy">
+              <div class="economy-main">
+                <h3>免费加入公开 Relay，<br>为更好的生成与创作者风格付费。</h3>
+                <p>公开接力提供免费体验额度。高质量模型、独家 Seed、商业授权与创作者风格模板构成清晰付费层。</p>
+                <div class="price-row"><div><strong>3 次</strong><span>新用户免费接力</span></div><div><strong>按次</strong><span>购买 AI remix credits</span></div><div><strong>透明</strong><span>后续 remix 分成</span></div></div>
+              </div>
+              <div class="economy-side">
+                <div class="eco-line"><span>01</span><div><b>Creator Plan</b><small>更多生成额度、私密 Relay、高清导出和商业授权。</small></div></div>
+                <div class="eco-line"><span>02</span><div><b>付费 Seed 与风格模板</b><small>创作者决定价格和允许的二创方式。</small></div></div>
+                <div class="eco-line"><span>03</span><div><b>后续贡献分成</b><small>父节点可从后续付费 remix 获得透明分成。</small></div></div>
+                <div class="eco-line"><span>04</span><div><b>平台服务费</b><small>从实际 AI 调用和付费 Relay 中收取，不向浏览者收费。</small></div></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="evidence">
+          <div class="section-inner">
+            <div class="evidence-strip">
+              <div class="evidence-intro"><h3>真实进度，不用标签冒充集成。</h3><p>只有产生可核验地址、交易或回执的能力，才会在最终提交材料中标为完成。</p></div>
+              <div class="evidence-item"><span>X Layer</span><b class="status-real" id="evidenceChainStatus">正在读取真实 RPC</b><code id="evidenceChain">chainId — · block —</code></div>
+              <div class="evidence-item"><span>TapeOut RelayRule</span><b class="status-pending">待部署</b><code>Processor / Circuit ID 尚未生成</code></div>
+              <div class="evidence-item"><span>RelayRegistry</span><b class="status-pending">待部署</b><code>当前发布仅保存在本机浏览器</code></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="footer"><strong>AI Remix Relay</strong><span>当前为可交互产品原型 · 真实 AI、TapeOut Circuit 与 X Layer 写入仍按路线接入</span><button class="btn btn-line btn-small" id="resetDemo" type="button">重置演示数据</button></footer>
+  </div>
+
+  <aside class="drawer" id="receiptDrawer" role="dialog" aria-modal="true" aria-labelledby="receiptTitle" aria-hidden="true" inert>
+    <div class="drawer-head"><h2 id="receiptTitle">Relay Receipt</h2><button class="icon-btn" id="closeDrawer" type="button" aria-label="关闭"><svg class="icon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+    <p>这一棒已经加入本地作品谱系。下面明确区分真实内容与尚未接入的协议字段。</p>
+    <div class="receipt">
+      <div class="receipt-row"><span>Node</span><b id="receiptNode">—</b></div>
+      <div class="receipt-row"><span>Parent</span><b id="receiptParent">—</b></div>
+      <div class="receipt-row"><span>Change rule</span><b id="receiptRule">—</b></div>
+      <div class="receipt-row"><span>Creator</span><b>Guest creator</b></div>
+      <div class="receipt-row"><span>Local hash</span><code id="receiptHash">—</code></div>
+      <div class="receipt-row"><span>AI receipt</span><b class="status-pending">Pending provider integration</b></div>
+      <div class="receipt-row"><span>Circuit result</span><b class="status-pending">Local preview only</b></div>
+      <div class="receipt-row"><span>X Layer tx</span><b class="status-pending">Not submitted</b></div>
+    </div>
+    <div class="handoff-box"><h3>把下一棒交出去</h3><p>复制这条 Relay 的邀请链接。当前链接使用本地节点 ID；接入后端后会变成跨用户可访问的真实交接。</p><button class="btn btn-dark" id="copyHandoff" type="button" style="width:100%">复制接力链接</button></div>
+  </aside>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (function(){
+      var $=function(id){return document.getElementById(id)};
+      var toast=$('toast');
+      var state={
+        selectedNode:'n2',selectedCandidate:0,rule:'色彩气候',generated:false,
+        nodes:[
+          {id:'n0',parent:null,creator:'@miko',title:'Seed',panel:0,branch:false},
+          {id:'n1',parent:'n0',creator:'@lin',title:'Signal',panel:1,branch:false},
+          {id:'n2',parent:'n1',creator:'@sola',title:'Current',panel:2,branch:false},
+          {id:'n3',parent:'n0',creator:'@noon',title:'Quiet branch',panel:1,branch:true}
+        ]
+      };
+      var saved=localStorage.getItem('ai-remix-relay-state');
+      if(saved){try{var parsed=JSON.parse(saved);if(parsed&&Array.isArray(parsed.nodes)){state.nodes=parsed.nodes;state.selectedNode=parsed.selectedNode||state.selectedNode}}catch(error){}}
+      function save(){localStorage.setItem('ai-remix-relay-state',JSON.stringify({nodes:state.nodes,selectedNode:state.selectedNode}))}
+      function showToast(message){toast.textContent=message;toast.classList.add('show');clearTimeout(showToast.timer);showToast.timer=setTimeout(function(){toast.classList.remove('show')},2600)}
+      function panelPosition(panel){return panel===0?'left center':panel===1?'center center':'right center'}
+      function currentNode(){return state.nodes.find(function(node){return node.id===state.selectedNode})||state.nodes[0]}
+      function escapeText(value){return String(value).replace(/[&<>"']/g,function(char){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]})}
+      function renderStage(){
+        var node=currentNode();$('stageArtwork').style.backgroundPosition=panelPosition(node.panel);
+        $('nodeEdition').textContent='NODE '+node.id.slice(1).padStart(2,'0')+' / '+String(state.nodes.length).padStart(2,'0');
+        $('nodeCreator').textContent='by '+node.creator;$('creatorAvatar').textContent=node.creator.replace('@','').charAt(0).toUpperCase();
+        $('batonName').textContent=node.creator+' 传来的 '+node.title;$('batonTime').textContent=node.parent?'父节点 '+node.parent.toUpperCase()+' · 可继续接力':'原始 Seed · 可继续接力';
+      }
+      function renderRail(){
+        var path=state.nodes.filter(function(node){return !node.branch});
+        $('rail').innerHTML=path.map(function(node){return '<button class="rail-node '+(node.id===state.selectedNode?'active':'')+'" type="button" data-node="'+node.id+'" aria-label="查看 '+node.id+'"><span class="rail-art" style="background-position:'+panelPosition(node.panel)+'"></span></button>'}).join('');
+        $('rail').querySelectorAll('[data-node]').forEach(function(button){button.addEventListener('click',function(){state.selectedNode=button.dataset.node;renderAll()})});
+      }
+      function renderGraph(){
+        var nodes=state.nodes.slice(0,7);
+        $('graph').innerHTML=nodes.map(function(node,index){
+          var cls='graph-card node'+Math.min(index,4)+(node.branch?' branch':'')+(node.id===state.selectedNode?' active':'');
+          return '<button class="'+cls+'" type="button" data-graph-node="'+node.id+'"><span class="graph-art" style="display:block;background-position:'+panelPosition(node.panel)+'"></span><span class="graph-copy"><b>'+escapeText(node.title)+'</b><span>'+escapeText(node.creator)+'</span></span></button>';
+        }).join('');
+        $('graph').querySelectorAll('[data-graph-node]').forEach(function(button){button.addEventListener('click',function(){state.selectedNode=button.dataset.graphNode;renderAll();$('relay').scrollIntoView({behavior:'smooth'})})});
+      }
+      function renderAll(){renderStage();renderRail();renderGraph();save()}
+      $('takeBaton').addEventListener('click',function(){$('studio').scrollIntoView({behavior:'smooth',block:'start'});$('promptInput').focus()});
+      $('ruleChips').querySelectorAll('.rule-chip').forEach(function(chip){chip.addEventListener('click',function(){$('ruleChips').querySelectorAll('.rule-chip').forEach(function(item){item.classList.remove('active');item.setAttribute('aria-pressed','false')});chip.classList.add('active');chip.setAttribute('aria-pressed','true');state.rule=chip.dataset.rule;$('publishStatus').innerHTML='<b>本地规则预检通过</b>已锁定“'+escapeText(state.rule)+'”，尚未调用真实 Circuit'})});
+      $('candidateGrid').querySelectorAll('.candidate').forEach(function(candidate){candidate.addEventListener('click',function(){$('candidateGrid').querySelectorAll('.candidate').forEach(function(item){item.classList.remove('selected');item.setAttribute('aria-pressed','false')});candidate.classList.add('selected');candidate.setAttribute('aria-pressed','true');state.selectedCandidate=Number(candidate.dataset.candidate)})});
+      $('generateCandidates').addEventListener('click',function(){
+        var button=this;button.disabled=true;button.textContent='正在准备候选…';$('publishStatus').innerHTML='<b style="color:var(--amber)">演示生成器运行中</b>不会把本地视觉处理冒充真实 AI';
+        setTimeout(function(){
+          state.generated=true;button.disabled=false;button.textContent='重新生成 3 个候选';
+          $('candidateGrid').querySelectorAll('.candidate').forEach(function(item){item.disabled=false;item.classList.remove('selected');item.setAttribute('aria-pressed','false')});
+          var first=$('candidateGrid').querySelector('.candidate');first.classList.add('selected');first.setAttribute('aria-pressed','true');state.selectedCandidate=0;
+          $('publishNode').disabled=false;$('publishNode').textContent='发布到本地谱系';$('publishStatus').innerHTML='<b>3 个候选已准备</b>选择一个版本；当前发布只写入本机浏览器';showToast('候选已生成 · 当前为演示引擎')
+        },900);
+      });
+      function localHash(input){var hash=2166136261;for(var i=0;i<input.length;i++){hash^=input.charCodeAt(i);hash=Math.imul(hash,16777619)}return 'local-'+(hash>>>0).toString(16).padStart(8,'0')}
+      var lastFocus=null;
+      $('publishNode').addEventListener('click',function(){
+        if(!state.generated){showToast('请先生成候选');return}
+        var parent=currentNode();var id='n'+state.nodes.length;var prompt=$('promptInput').value.trim();
+        var node={id:id,parent:parent.id,creator:'@guest',title:state.rule,panel:state.selectedCandidate,branch:parent.id!=='n2'};
+        state.nodes.push(node);state.selectedNode=id;renderAll();
+        $('receiptNode').textContent=id.toUpperCase();$('receiptParent').textContent=parent.id.toUpperCase();$('receiptRule').textContent=state.rule;$('receiptHash').textContent=localHash(parent.id+'|'+state.rule+'|'+prompt+'|'+state.selectedCandidate);
+        lastFocus=this;$('receiptDrawer').removeAttribute('inert');$('receiptDrawer').classList.add('open');$('receiptDrawer').setAttribute('aria-hidden','false');$('closeDrawer').focus();showToast('下一棒已加入本地谱系');
+      });
+      function closeDrawer(){$('receiptDrawer').classList.remove('open');$('receiptDrawer').setAttribute('aria-hidden','true');$('receiptDrawer').setAttribute('inert','');if(lastFocus)lastFocus.focus()}
+      $('closeDrawer').addEventListener('click',closeDrawer);
+      document.addEventListener('keydown',function(event){
+        var drawer=$('receiptDrawer');if(!drawer.classList.contains('open'))return;
+        if(event.key==='Escape'){closeDrawer();return}
+        if(event.key==='Tab'){
+          var focusable=Array.from(drawer.querySelectorAll('button,[href],input,textarea,select,[tabindex]:not([tabindex="-1"])')).filter(function(item){return !item.disabled});
+          if(!focusable.length)return;var first=focusable[0];var last=focusable[focusable.length-1];
+          if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
+          else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
+        }
+      });
+      $('copyHandoff').addEventListener('click',async function(){
+        var link=location.origin+location.pathname+'?relay=city-signal-2049&node='+encodeURIComponent(state.selectedNode);
+        try{await navigator.clipboard.writeText(link);showToast('接力链接已复制')}catch(error){showToast('无法访问剪贴板，请从地址栏复制')}
+      });
+      $('shareRelay').addEventListener('click',async function(){var link=location.href.split('?')[0]+'?relay=city-signal-2049';try{await navigator.clipboard.writeText(link);showToast('Relay 分享链接已复制')}catch(error){showToast('分享链接：'+link)}});
+      $('createSeed').addEventListener('click',function(){showToast('发起 Seed 将在下一版接入上传、授权和真实 AI 初始化')});
+      $('openInbox').addEventListener('click',function(){showToast('收件箱：2 个演示交接 · 多用户后端待接入')});
+      $('openMine').addEventListener('click',function(){showToast('你在本机创建了 '+state.nodes.filter(function(node){return node.creator==='@guest'}).length+' 个节点')});
+      document.querySelectorAll('.feed-item').forEach(function(item){item.addEventListener('click',function(){document.querySelectorAll('.feed-item').forEach(function(feed){feed.classList.remove('active')});item.classList.add('active');if(item.dataset.relay!=='city'){showToast('该 Relay 为内容预览；首版完整闭环聚焦 City Signal 2049')}else{$('relay').scrollIntoView({behavior:'smooth'})}})});
+      $('resetDemo').addEventListener('click',function(){localStorage.removeItem('ai-remix-relay-state');location.reload()});
+      async function readChain(){
+        try{
+          var response=await fetch('https://rpc.xlayer.tech',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify([{jsonrpc:'2.0',id:1,method:'eth_chainId',params:[]},{jsonrpc:'2.0',id:2,method:'eth_blockNumber',params:[]}])});
+          if(!response.ok)throw new Error('RPC '+response.status);
+          var data=await response.json();var chain=parseInt(data.find(function(item){return item.id===1}).result,16);var block=parseInt(data.find(function(item){return item.id===2}).result,16);
+          $('chainState').classList.add('live');$('chainText').textContent='X Layer '+chain+' · '+block.toLocaleString();$('evidenceChainStatus').textContent='真实 RPC 读取成功';$('evidenceChain').textContent='chainId '+chain+' · block '+block.toLocaleString();
+        }catch(error){$('chainText').textContent='X Layer RPC 暂不可用';$('evidenceChainStatus').textContent='RPC 读取失败，可重试';$('evidenceChainStatus').className='status-pending';$('evidenceChain').textContent='未伪造链上状态'}
+      }
+      renderAll();readChain();
+    })();
+  </script>
+</body>
+</html>
