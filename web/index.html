@@ -416,7 +416,7 @@
       var $=function(id){return document.getElementById(id)};
       var toast=$('toast');
       var state={
-        relayId:'city-signal-2049',selectedNode:'n2',selectedCandidate:0,selectedCandidateId:null,rule:'色彩气候',contentType:'image',generated:false,identity:'@guest',mine:[],invites:[],invite:null,
+        relayId:'city-signal-2049',selectedNode:'n2',selectedCandidate:0,selectedCandidateId:null,rule:'色彩气候',contentType:'image',generated:false,identity:'@guest',mine:[],invites:[],invite:null,integrations:null,
         nodes:[
           {id:'n0',parent:null,creator:'@miko',title:'Seed',panel:0,branch:false,assetUrl:'/assets/relay-triptych.webp'},
           {id:'n1',parent:'n0',creator:'@lin',title:'Signal',panel:1,branch:false,assetUrl:'/assets/relay-triptych.webp'},
@@ -427,6 +427,10 @@
       };
       function showToast(message){toast.textContent=message;toast.classList.add('show');clearTimeout(showToast.timer);showToast.timer=setTimeout(function(){toast.classList.remove('show')},3200)}
       function escapeText(value){return String(value).replace(/[&<>"']/g,function(char){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]})}
+      async function sha256Hex(value){var bytes=typeof value==='string'?new TextEncoder().encode(value):value;var digest=await crypto.subtle.digest('SHA-256',bytes);return '0x'+Array.from(new Uint8Array(digest)).map(function(byte){return byte.toString(16).padStart(2,'0')}).join('')}
+      function word(value){return String(value).replace(/^0x/,'').padStart(64,'0')}
+      async function registryCalldata(candidate){var node=currentNode();var relayHash=await sha256Hex(state.relayId);var parentHash=await sha256Hex(node.id);var contentHash=candidate.contentHash||await sha256Hex(candidate.id);var ruleHash=await sha256Hex(state.rule+'|'+$('licenseCode').value+'|'+Math.round(Number($('splitBps').value||0)*100));var typeCode=candidate.contentType==='text'?'02':'01';var splitHex=Math.round(Number($('splitBps').value||0)*100).toString(16).padStart(4,'0');return '0x2a29ea36'+word(relayHash)+word(parentHash)+word(contentHash)+word(ruleHash)+word(typeCode)+word(splitHex)}
+      async function publishToRegistry(candidate){var address=state.integrations&&state.integrations.xLayer&&state.integrations.xLayer.registryAddress;if(!address)return null;if(!window.ethereum)throw new Error('已配置 RelayRegistry，但当前浏览器没有可用的钱包。请使用 OKX Wallet 或兼容 EVM 钱包。');var chain=await window.ethereum.request({method:'eth_chainId'});if(parseInt(chain,16)!==196)throw new Error('请先将钱包切换到 X Layer 主网（Chain ID 196）。');var accounts=await window.ethereum.request({method:'eth_requestAccounts'});if(!accounts||!accounts[0])throw new Error('需要连接钱包后才能写入 X Layer。');var txHash=await window.ethereum.request({method:'eth_sendTransaction',params:[{from:accounts[0],to:address,data:await registryCalldata(candidate)}]});return txHash}
       function panelPosition(panel){return panel===0?'left center':panel===1?'center center':'right center'}
       function currentNode(){return state.nodes.find(function(node){return node.id===state.selectedNode})||state.nodes[0]}
       function artworkStyle(node){
@@ -473,7 +477,7 @@
       }
       async function bootstrap(){
         try{
-          var params=new URLSearchParams(location.search);var query=params.toString()?'?'+params.toString():'';var payload=await api('/api/bootstrap'+query);state.nodes=payload.relay.nodes;state.relayId=payload.relay.id;state.identity=payload.identity?payload.identity.handle:'@guest';state.mine=payload.mine||[];state.invites=payload.invites||[];state.invite=payload.invite||null;
+          var params=new URLSearchParams(location.search);var query=params.toString()?'?'+params.toString():'';var payload=await api('/api/bootstrap'+query);state.nodes=payload.relay.nodes;state.relayId=payload.relay.id;state.identity=payload.identity?payload.identity.handle:'@guest';state.mine=payload.mine||[];state.invites=payload.invites||[];state.invite=payload.invite||null;state.integrations=payload.integrations;
           var feed=[{id:'city-signal-2049',title:'City Signal 2049',description:'官方示例 Relay',coverUrl:'/assets/relay-triptych.webp'}].concat(payload.feed||[]);$('feedList').innerHTML=feed.map(function(item){return '<button class="feed-item '+(item.id===state.relayId?'active':'')+'" type="button" data-relay-id="'+escapeText(item.id)+'"><span class="feed-thumb" style="background-image:url(&quot;'+encodeURI(item.coverUrl)+'&quot;);background-size:cover;background-position:center"></span><span class="feed-title">'+escapeText(item.title)+'</span><span class="feed-meta"><span>'+escapeText(item.description||'开放接力')+'</span></span></button>'}).join('');
           $('relayTitle').textContent=payload.relay.title;$('relayCaption').textContent=payload.relay.description||'从一件作品开始，把下一棒交给其他创作者。';$('creditBalance').textContent=(payload.credits&&payload.credits.balance||0)+' Credits';$('inboxCount').textContent=state.invites.length;
           var requested=params.get('node');if(requested&&state.nodes.some(function(node){return node.id===requested}))state.selectedNode=requested;
@@ -481,6 +485,8 @@
           state.contentType=(currentNode().contentType||payload.relay.content_type||'image');refreshContentMode();
           var ai=payload.integrations.ai;
           $('engineDisclosure').innerHTML=ai?'<b>真实 AI 创作引擎已连接</b><br>三个候选由服务端基于父作品生成，作品与谱系会跨设备保存。':'<b>多人数据与作品存储已连接</b><br>真实 AI Secret 尚未配置；生成按钮会明确提示，不会回退到演示图片。';
+          if(payload.integrations.tapeOut&&payload.integrations.tapeOut.circuitAddress){$('evidenceChainStatus').textContent='Circuit 已配置';$('evidenceChainStatus').className='status-real';$('evidenceChain').textContent='Circuit '+payload.integrations.tapeOut.circuitId+' · '+payload.integrations.tapeOut.circuitAddress}else{$('evidenceChainStatus').textContent='待部署';$('evidenceChainStatus').className='status-pending';$('evidenceChain').textContent='Processor / Circuit ID 尚未生成'}
+          if(payload.integrations.xLayer&&payload.integrations.xLayer.registryAddress){var registryCode=document.querySelector('#evidence [class="evidence-item"]:last-child code');if(registryCode)registryCode.textContent=payload.integrations.xLayer.registryAddress;var registryStatus=document.querySelector('#evidence [class="evidence-item"]:last-child b');if(registryStatus){registryStatus.textContent='Registry 已配置';registryStatus.className='status-real'}}
           if(state.invite){$('inviteMessage').textContent=state.invite.sender_name+' 邀请你从节点 '+state.invite.node_id.slice(0,8)+' 接下一棒。状态：'+state.invite.status;$('inviteBanner').classList.add('show');$('acceptInvite').disabled=!state.invite.canAccept}
           $('generateCandidates').disabled=false;renderAll();
         }catch(error){$('engineDisclosure').innerHTML='<b>服务端暂不可用</b><br>当前只展示只读 Seed；请稍后刷新。';$('generateCandidates').disabled=true;showToast('多人服务连接失败')}
@@ -513,8 +519,8 @@
         if(!state.selectedCandidateId){showToast('请先生成并选择候选');return}
         var button=this;button.disabled=true;button.textContent='正在发布…';
         try{
-          var licenseCode=$('licenseCode').value;var splitBps=Math.round(Number($('splitBps').value||0)*100);var payload=await api('/api/nodes',{method:'POST',body:JSON.stringify({candidateId:state.selectedCandidateId,licenseCode:licenseCode,splitBps:splitBps})});if(!payload.duplicate)state.nodes.push(payload.node);state.selectedNode=payload.node.id;renderAll();
-          $('receiptNode').textContent=payload.node.id.slice(0,12);$('receiptParent').textContent=(payload.node.parent||'—').slice(0,12);$('receiptRule').textContent=payload.node.title;$('receiptCreator').textContent=payload.node.creator;$('receiptContentHash').textContent=payload.node.contentHash||'—';$('receiptHash').textContent=payload.receipt?payload.receipt.hash:'已存在';$('receiptLicense').textContent=payload.node.licenseCode||licenseCode;$('receiptStorage').textContent=payload.receipt?payload.receipt.storage:'D1 + R2';
+          var licenseCode=$('licenseCode').value;var splitBps=Math.round(Number($('splitBps').value||0)*100);var selectedCandidate=state.candidates[state.selectedCandidate];var registryTxHash=await publishToRegistry(selectedCandidate);var payload=await api('/api/nodes',{method:'POST',body:JSON.stringify({candidateId:state.selectedCandidateId,licenseCode:licenseCode,splitBps:splitBps,registryTxHash:registryTxHash})});if(!payload.duplicate)state.nodes.push(payload.node);state.selectedNode=payload.node.id;renderAll();
+          $('receiptNode').textContent=payload.node.id.slice(0,12);$('receiptParent').textContent=(payload.node.parent||'—').slice(0,12);$('receiptRule').textContent=payload.node.title;$('receiptCreator').textContent=payload.node.creator;$('receiptContentHash').textContent=payload.node.contentHash||'—';$('receiptHash').textContent=payload.receipt?payload.receipt.hash:'已存在';$('receiptLicense').textContent=payload.node.licenseCode||licenseCode;$('receiptStorage').textContent=payload.receipt?(payload.receipt.registryTxHash?'D1 + R2 + X Layer':'D1 + R2'):'D1 + R2';
           lastFocus=button;$('receiptDrawer').removeAttribute('inert');$('receiptDrawer').classList.add('open');$('receiptDrawer').setAttribute('aria-hidden','false');$('closeDrawer').focus();showToast('下一棒已发布到公共谱系');
           state.generated=false;state.selectedCandidateId=null;
         }catch(error){showToast(error.message)}finally{button.disabled=!state.selectedCandidateId;button.textContent='发布为下一棒'}

@@ -20,7 +20,7 @@
 
 | 官网条件 | 产品如何满足 | 必须提交的真实证据 | 当前状态 |
 |---|---|---|---|
-| 围绕 TapeOut 生态开发，并使用 X Layer 上的 TapeOut 电路、合约或链上数据，或运行于 X Layer DeWEB | 每次发布前调用 `RelayRule` TapeOut Circuit；发布后由 X Layer `RelayRegistry` 记录父子关系、内容承诺、授权与分成 | Processor 地址、Circuit ID、Registry 地址、浏览器交易链接、成功调用日志 | **未完成，硬阻塞** |
+| 围绕 TapeOut 生态开发，并使用 X Layer 上的 TapeOut 电路、合约或链上数据，或运行于 X Layer DeWEB | 已加入 `RelayRule` Circuit 输入规范和 `RelayRegistry` 合约源码；发布流程已支持接收 Circuit/Registry 交易证据，待完成真实部署和调用 | Processor 地址、Circuit ID、Registry 地址、浏览器交易链接、成功调用日志 | **代码已准备，链上部署未完成** |
 | 面向 Web2/Web3 用户的真实需求 | 普通用户不必写复杂提示词即可参与 AI 共创；创作者不再丢失来源、署名、授权和后续贡献 | 至少 5 名外部测试用户；其中 2 个不同账户完成连续两棒；访谈记录 | 产品假设已确定，尚未验证 |
 | 可基于现有生态继续开发 | 优先复用官方 Processor、Circuit 工具、TapeKit 与标准钱包能力，不重复造链、钱包或 AI 模型 | 依赖清单和集成说明 | 待技术验证 |
 | 说明产品或服务 | 明确展示 Relay Feed、Relay Studio、AI 生成、发布、谱系、交接和创作者收益 | 可访问产品链接、产品说明、完整操作录像 | 定义完成，产品未完成 |
@@ -111,6 +111,6 @@
 
 ## 六、当前真实结论
 
-目前项目**仍不符合最终提交条件**，但已从页面原型升级为服务器化产品：D1/R2 多用户数据与图片/文字作品存储、真实 Seed 上传、动态 Relay Feed、可追踪邀请与接受状态、我的创作、无限横向谱系、内容哈希、授权与分成字段、Credits 账本、限流、幂等发布和失败退款均已实现。公网 Worker 已部署并真实读取 X Layer RPC。
+目前项目**仍不符合最终提交条件**，但已从页面原型升级为服务器化产品：D1/R2 多用户数据与图片/文字作品存储、真实 Seed 上传、动态 Relay Feed、可追踪邀请与接受状态、我的创作、无限横向谱系、内容哈希、授权与分成字段、Credits 账本、限流、幂等发布和失败退款均已实现；本次新增了 `contracts/RelayRegistry.sol`、RelayRule Circuit 规范，以及可接收链上交易证据的发布接口。公网 Worker 已部署并真实读取 X Layer RPC。
 
 当前硬缺口是 OpenAI Secret 尚未配置，因此不能验证真实图生图质量、成本和延迟；RelayRule TapeOut Circuit 与 X Layer RelayRegistry 也尚未部署。下一步是完成真实 AI 闭环和两账户连续两棒，再部署 Circuit 与 Registry 并生成链上证据。

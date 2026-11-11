@@ -57,6 +57,25 @@ function safeText(value, maxLength) {
   return String(value || "").trim().slice(0, maxLength);
 }
 
+function validTxHash(value) {
+  return /^0x[0-9a-fA-F]{64}$/.test(String(value || ""));
+}
+
+function chainIntegration(env) {
+  const registryAddress = safeText(env.RELAY_REGISTRY_ADDRESS, 42);
+  const tapeOutProcessor = safeText(env.TAPEOUT_PROCESSOR_ADDRESS, 42);
+  const tapeOutCircuitId = safeText(env.TAPEOUT_CIRCUIT_ID, 32);
+  const tapeOutCircuitAddress = safeText(env.TAPEOUT_CIRCUIT_ADDRESS, 42);
+  return {
+    registryAddress: /^0x[0-9a-fA-F]{40}$/.test(registryAddress) ? registryAddress : null,
+    tapeOut: {
+      processorAddress: /^0x[0-9a-fA-F]{40}$/.test(tapeOutProcessor) ? tapeOutProcessor : null,
+      circuitId: tapeOutCircuitId || null,
+      circuitAddress: /^0x[0-9a-fA-F]{40}$/.test(tapeOutCircuitAddress) ? tapeOutCircuitAddress : null,
+    },
+  };
+}
+
 function decodeBase64(value) {
   const binary = atob(value);
   const bytes = new Uint8Array(binary.length);
@@ -84,7 +103,7 @@ export function deriveBranchFlags(nodes) {
 
 async function loadNodes(env, relayId = RELAY_ID) {
   const result = await env.DB.prepare(
-    "SELECT id, parent_id, creator_name, title, asset_key, content_type, mime_type, preview_text, license_code, split_bps, rule_result, content_hash, created_at FROM nodes WHERE relay_id = ? ORDER BY created_at ASC LIMIT 250"
+    "SELECT id, parent_id, creator_name, title, asset_key, content_type, mime_type, preview_text, license_code, split_bps, rule_result, content_hash, circuit_result, circuit_tx_hash, registry_tx_hash, created_at FROM nodes WHERE relay_id = ? ORDER BY created_at ASC LIMIT 250"
   ).bind(relayId).all();
   const persisted = result.results.map((row, index) => ({
     id: row.id,
@@ -100,6 +119,9 @@ async function loadNodes(env, relayId = RELAY_ID) {
     splitBps: row.split_bps,
     ruleResult: row.rule_result ? JSON.parse(row.rule_result) : null,
     contentHash: row.content_hash,
+    circuitResult: row.circuit_result ? JSON.parse(row.circuit_result) : null,
+    circuitTxHash: row.circuit_tx_hash || null,
+    registryTxHash: row.registry_tx_hash || null,
     createdAt: row.created_at,
   }));
   return deriveBranchFlags(relayId === RELAY_ID ? [...seedNodes, ...persisted] : persisted);
@@ -133,8 +155,8 @@ async function handleBootstrap(request, env, url) {
       ai: Boolean(env.OPENAI_API_KEY),
       database: true,
       storage: true,
-      xLayer: { chainId: 196, mode: "read-only" },
-      tapeOut: { mode: "planned", circuitId: null },
+      xLayer: { chainId: 196, mode: chainIntegration(env).registryAddress ? "registry-configured" : "read-only", registryAddress: chainIntegration(env).registryAddress },
+      tapeOut: { mode: chainIntegration(env).tapeOut.circuitAddress ? "circuit-configured" : "planned", ...chainIntegration(env).tapeOut },
       contentTypes: ["image", "text"],
     },
   });
@@ -254,7 +276,8 @@ async function handleGenerate(request, env) {
     if (previous.status !== "completed") return error("generation_in_progress", "同一请求正在处理或已经失败，请重新生成。", 409);
     const stored = await env.DB.prepare("SELECT id, ordinal, asset_key, content_type FROM candidates WHERE generation_id = ? ORDER BY ordinal").bind(previous.id).all();
     const generation = await env.DB.prepare("SELECT content_type FROM generations WHERE id = ?").bind(previous.id).first();
-    return json({ ok: true, generationId: previous.id, duplicate: true, candidates: stored.results.map(row => ({ id: row.id, ordinal: row.ordinal, contentType: row.content_type || generation?.content_type || "image", assetUrl: `/api/assets/${encodeURIComponent(row.asset_key)}` })) });
+    const candidateRows = await env.DB.prepare("SELECT id, ordinal, asset_key, content_type, content_hash FROM candidates WHERE generation_id = ? ORDER BY ordinal").bind(previous.id).all();
+    return json({ ok: true, generationId: previous.id, duplicate: true, candidates: candidateRows.results.map(row => ({ id: row.id, ordinal: row.ordinal, contentType: row.content_type || generation?.content_type || "image", contentHash: row.content_hash, assetUrl: `/api/assets/${encodeURIComponent(row.asset_key)}` })) });
   }
   const recent = await env.DB.prepare("SELECT COUNT(*) AS count FROM generations WHERE user_id = ? AND created_at >= ?").bind(identity.id, new Date(Date.now() - 60_000).toISOString()).first();
   if (Number(recent?.count || 0) >= 2) return error("rate_limited", "生成过于频繁，请一分钟后再试。", 429);
@@ -286,7 +309,7 @@ async function handleGenerate(request, env) {
       const assetKey = `relays/${relayId}/generations/${generationId}/${index}.${extension}`;
       await env.BUCKET.put(assetKey, item.bytes, { httpMetadata: { contentType: item.mimeType || "image/webp" } }); storedKeys.push(assetKey);
       await env.DB.prepare("INSERT INTO candidates (id, generation_id, ordinal, asset_key, revised_prompt, created_at, content_hash, content_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(id, generationId, index, assetKey, item.revisedPrompt, createdAt, item.contentHash, item.contentType || "image").run();
-      candidates.push({ id, ordinal: index, contentType: item.contentType || "image", previewText: item.previewText || null, assetUrl: `/api/assets/${encodeURIComponent(assetKey)}` });
+      candidates.push({ id, ordinal: index, contentType: item.contentType || "image", contentHash: item.contentHash, previewText: item.previewText || null, assetUrl: `/api/assets/${encodeURIComponent(assetKey)}` });
     }
     await env.DB.prepare("UPDATE generations SET status = 'completed' WHERE id = ?").bind(generationId).run();
   } catch {
@@ -304,7 +327,11 @@ async function handlePublish(request, env) {
   const candidateId = safeText(body.candidateId, 80);
   const licenseCode = safeText(body.licenseCode || "CC-BY-NC-4.0", 40);
   const splitBps = Number(body.splitBps ?? 0);
+  const circuitResult = body.circuitResult && typeof body.circuitResult === "object" ? body.circuitResult : null;
+  const circuitTxHash = safeText(body.circuitTxHash, 80) || null;
+  const registryTxHash = safeText(body.registryTxHash, 80) || null;
   if (!candidateId || !ALLOWED_LICENSES.has(licenseCode) || !Number.isInteger(splitBps) || splitBps < 0 || splitBps > 3000) return error("invalid_publication", "候选作品、授权方式或分成比例无效。", 422);
+  if ((circuitTxHash && !validTxHash(circuitTxHash)) || (registryTxHash && !validTxHash(registryTxHash))) return error("invalid_chain_proof", "Circuit 或 Registry 交易哈希格式无效。", 422);
   const duplicate = await env.DB.prepare("SELECT id, parent_id, creator_name, title, asset_key, content_hash, license_code, split_bps, rule_result FROM nodes WHERE candidate_id = ?").bind(candidateId).first();
   if (duplicate) return json({ ok: true, duplicate: true, node: { id: duplicate.id, parent: duplicate.parent_id, creator: duplicate.creator_name, title: duplicate.title, assetUrl: `/api/assets/${encodeURIComponent(duplicate.asset_key)}`, contentHash: duplicate.content_hash, licenseCode: duplicate.license_code, splitBps: duplicate.split_bps, ruleResult: duplicate.rule_result ? JSON.parse(duplicate.rule_result) : null } });
   const candidate = await env.DB.prepare(
@@ -314,19 +341,19 @@ async function handlePublish(request, env) {
 
   const nodeId = crypto.randomUUID();
   const createdAt = new Date().toISOString();
-  const ruleResult = { engine: "application-preflight", version: 1, passed: true, rule: candidate.rule, attributionPreserved: true, tapeOutCircuit: "pending" };
+  const ruleResult = circuitResult || { engine: "application-preflight", version: 1, passed: true, rule: candidate.rule, attributionPreserved: true, tapeOutCircuit: "pending" };
   const receiptHash = await sha256(JSON.stringify({ relayId: candidate.relay_id, nodeId, parentId: candidate.parent_node_id, contentHash: candidate.content_hash, licenseCode, splitBps, ruleResult, createdAt }));
   const siblings = await env.DB.prepare("SELECT COUNT(*) AS count FROM nodes WHERE relay_id = ? AND parent_id = ?").bind(candidate.relay_id, candidate.parent_node_id).first();
   await env.DB.batch([
     env.DB.prepare("UPDATE candidates SET selected = 1 WHERE id = ? AND selected = 0").bind(candidateId),
     env.DB.prepare(
-      "INSERT INTO nodes (id, relay_id, parent_id, user_id, creator_name, title, rule, prompt, asset_key, receipt_hash, created_at, candidate_id, license_code, split_bps, rule_result, content_hash, content_type, mime_type, preview_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    ).bind(nodeId, candidate.relay_id, candidate.parent_node_id, identity.id, identity.handle, candidate.rule, candidate.rule, candidate.prompt, candidate.asset_key, receiptHash, createdAt, candidateId, licenseCode, splitBps, JSON.stringify(ruleResult), candidate.content_hash, candidate.content_type || "image", candidate.content_type === "text" ? "text/plain; charset=utf-8" : "image/webp", null),
+      "INSERT INTO nodes (id, relay_id, parent_id, user_id, creator_name, title, rule, prompt, asset_key, receipt_hash, created_at, candidate_id, license_code, split_bps, rule_result, content_hash, content_type, mime_type, preview_text, circuit_result, circuit_tx_hash, registry_tx_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    ).bind(nodeId, candidate.relay_id, candidate.parent_node_id, identity.id, identity.handle, candidate.rule, candidate.rule, candidate.prompt, candidate.asset_key, receiptHash, createdAt, candidateId, licenseCode, splitBps, JSON.stringify(ruleResult), candidate.content_hash, candidate.content_type || "image", candidate.content_type === "text" ? "text/plain; charset=utf-8" : "image/webp", null, JSON.stringify(ruleResult), circuitTxHash, registryTxHash),
   ]);
   return json({
     ok: true,
-    node: { id: nodeId, parent: candidate.parent_node_id, creator: identity.handle, title: candidate.rule, panel: 0, branch: Number(siblings?.count || 0) > 0, contentType: candidate.content_type || "image", assetUrl: `/api/assets/${encodeURIComponent(candidate.asset_key)}`, contentHash: candidate.content_hash, licenseCode, splitBps, ruleResult },
-    receipt: { hash: receiptHash, createdAt, storage: "D1 + R2", chain: "not-submitted" },
+    node: { id: nodeId, parent: candidate.parent_node_id, creator: identity.handle, title: candidate.rule, panel: 0, branch: Number(siblings?.count || 0) > 0, contentType: candidate.content_type || "image", assetUrl: `/api/assets/${encodeURIComponent(candidate.asset_key)}`, contentHash: candidate.content_hash, licenseCode, splitBps, ruleResult, circuitTxHash, registryTxHash },
+    receipt: { hash: receiptHash, createdAt, storage: "D1 + R2", chain: registryTxHash ? "xlayer" : "not-submitted", circuit: circuitTxHash ? "xlayer" : "not-submitted", registryTxHash, circuitTxHash },
   }, 201);
 }
 
