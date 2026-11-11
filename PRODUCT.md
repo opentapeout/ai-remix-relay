@@ -30,7 +30,7 @@ AI Remix Relay 是一个支持图片与文字的多人接力创作网络。它�
 
 - 核心闭环：发现 Relay、选择图片或文字 Seed、接下一棒、AI 生成候选、选择版本、发布、查看谱系、邀请下一位。
 - Relay 节点必须包含 parent、creator、content hash、AI receipt、license、rule result、split、timestamp。
-- `RelayRule` TapeOut Circuit 负责判断 parent 是否存在、授权是否接受、变化类型是否允许、署名是否保留以及分支是否开放。
+- `RelayRule` TapeOut Circuit 负责判断 parent 是否存在、授权是否接受、变化类型是否允许、署名是否保留以及分支是否开放，并输出本轮 AI 可使用的 `Remix Recipe`；Circuit 结果会影响生成提示和发布条件。
 - X Layer `RelayRegistry` 负责节点承诺、parent-child 关系、授权与分成；付费 Relay 通过合约结算。
 - AI 服务端生成可验证的调用回执；TapeSend 可用于定向交接；TapeKit/DeWEB 可用于发布永久 Relay 页面。TapeAPI 属第三方生态能力，只有完成 X Layer 兼容性验证后才考虑接入，不能用它替代 X Layer 的硬性要求。
 - 需要真实 AI 服务、后端存储和多用户账户；本地 Canvas 只可作为降级预览，不得冒充 AI 生成。

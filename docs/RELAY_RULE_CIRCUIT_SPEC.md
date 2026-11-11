@@ -17,7 +17,9 @@
 
 `ALLOW = parentExists && contentTypeAllowed && ruleAllowed && attributionPreserved && licenseAccepted && splitWithinLimit`
 
-The circuit does not judge artistic quality or AI safety. Those remain application/provider responsibilities. The circuit only decides whether the declared lineage and policy inputs satisfy the relay's publish contract.
+When `ALLOW` is true, the circuit also returns a small `recipeCode`. The recipe code is the bridge between TapeOut and the AI layer: it selects the permitted remix strategy (for example `IMAGE_COLOR_SHIFT` or `TEXT_NARRATIVE_LENS`). The provider receives this code as part of the generation instruction, so the circuit output changes the product behavior rather than merely appearing in an audit panel.
+
+The circuit does not judge artistic quality or AI safety. Those remain application/provider responsibilities. The circuit only decides whether the declared lineage and policy inputs satisfy the relay's publish contract and which deterministic recipe the AI layer may use.
 
 ## X Layer evidence required before submission
 

@@ -11,6 +11,8 @@ contract RelayRegistry {
         bytes32 parentNodeId;
         bytes32 contentHash;
         bytes32 ruleHash;
+        bytes32 circuitInputCommitment;
+        bytes32 recipeCode;
         address creator;
         uint64 createdAt;
         uint16 splitBps;
@@ -26,6 +28,8 @@ contract RelayRegistry {
         bytes32 indexed parentNodeId,
         bytes32 contentHash,
         bytes32 ruleHash,
+        bytes32 circuitInputCommitment,
+        bytes32 recipeCode,
         address creator,
         uint8 contentType,
         uint16 splitBps
@@ -41,6 +45,8 @@ contract RelayRegistry {
         bytes32 parentNodeId,
         bytes32 contentHash,
         bytes32 ruleHash,
+        bytes32 circuitInputCommitment,
+        bytes32 recipeCode,
         uint8 contentType,
         uint16 splitBps
     ) external returns (bytes32 nodeId) {
@@ -56,6 +62,8 @@ contract RelayRegistry {
             parentNodeId: parentNodeId,
             contentHash: contentHash,
             ruleHash: ruleHash,
+            circuitInputCommitment: circuitInputCommitment,
+            recipeCode: recipeCode,
             creator: msg.sender,
             createdAt: uint64(block.timestamp),
             splitBps: splitBps,
@@ -63,6 +71,6 @@ contract RelayRegistry {
             exists: true
         });
 
-        emit NodePublished(nodeId, relayId, parentNodeId, contentHash, ruleHash, msg.sender, contentType, splitBps);
+        emit NodePublished(nodeId, relayId, parentNodeId, contentHash, ruleHash, circuitInputCommitment, recipeCode, msg.sender, contentType, splitBps);
     }
 }

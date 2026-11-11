@@ -4,6 +4,16 @@ const seedArtworkBase64 = __SEED_ARTWORK_BASE64__;
 const RELAY_ID = "city-signal-2049";
 const ALLOWED_RULES = new Set(["色彩气候", "构图重心", "时代氛围", "文字节奏", "叙事视角", "语气风格", "情节推进", "标题钩子"]);
 const ALLOWED_CONTENT_TYPES = new Set(["image", "text"]);
+const RECIPE_CODES = new Map([
+  ["image:色彩气候", "IMAGE_COLOR_SHIFT"],
+  ["image:构图重心", "IMAGE_COMPOSITION_SHIFT"],
+  ["image:时代氛围", "IMAGE_ERA_SHIFT"],
+  ["image:文字节奏", "IMAGE_TEXT_RHYTHM"],
+  ["text:叙事视角", "TEXT_NARRATIVE_LENS"],
+  ["text:语气风格", "TEXT_TONE_SHIFT"],
+  ["text:情节推进", "TEXT_PLOT_BRANCH"],
+  ["text:标题钩子", "TEXT_TITLE_HOOK"],
+]);
 const ALLOWED_LICENSES = new Set(["CC-BY-NC-4.0", "CC-BY-4.0", "ALL-RIGHTS-RESERVED"]);
 const seedNodes = [
   { id: "n0", parent: null, creator: "@miko", title: "Seed", panel: 0, branch: false, assetUrl: "/assets/relay-triptych.webp" },
@@ -76,6 +86,10 @@ function chainIntegration(env) {
   };
 }
 
+function recipeFor(contentType, rule) {
+  return RECIPE_CODES.get(`${contentType}:${rule}`) || null;
+}
+
 function decodeBase64(value) {
   const binary = atob(value);
   const bytes = new Uint8Array(binary.length);
@@ -103,7 +117,7 @@ export function deriveBranchFlags(nodes) {
 
 async function loadNodes(env, relayId = RELAY_ID) {
   const result = await env.DB.prepare(
-    "SELECT id, parent_id, creator_name, title, asset_key, content_type, mime_type, preview_text, license_code, split_bps, rule_result, content_hash, circuit_result, circuit_tx_hash, registry_tx_hash, created_at FROM nodes WHERE relay_id = ? ORDER BY created_at ASC LIMIT 250"
+    "SELECT id, parent_id, creator_name, title, asset_key, content_type, mime_type, preview_text, license_code, split_bps, rule_result, content_hash, circuit_result, circuit_tx_hash, registry_tx_hash, recipe_code, circuit_input_commitment, created_at FROM nodes WHERE relay_id = ? ORDER BY created_at ASC LIMIT 250"
   ).bind(relayId).all();
   const persisted = result.results.map((row, index) => ({
     id: row.id,
@@ -119,6 +133,8 @@ async function loadNodes(env, relayId = RELAY_ID) {
     splitBps: row.split_bps,
     ruleResult: row.rule_result ? JSON.parse(row.rule_result) : null,
     contentHash: row.content_hash,
+    recipeCode: row.recipe_code || null,
+    circuitInputCommitment: row.circuit_input_commitment || null,
     circuitResult: row.circuit_result ? JSON.parse(row.circuit_result) : null,
     circuitTxHash: row.circuit_tx_hash || null,
     registryTxHash: row.registry_tx_hash || null,
@@ -172,7 +188,7 @@ async function resolveParentAsset(parentNodeId, relayId, env) {
   return { bytes: new Uint8Array(await object.arrayBuffer()), contentType: row.content_type || "image", mimeType: row.mime_type || "image/webp", previewText: row.preview_text || null };
 }
 
-async function callImageEdit({ apiKey, imageBytes, rule, prompt }) {
+async function callImageEdit({ apiKey, imageBytes, rule, prompt, recipeCode }) {
   const directions = [
     "preserve the strongest composition and make one restrained, elegant change",
     "amplify the visual signal with a bolder but coherent interpretation",
@@ -186,6 +202,7 @@ async function callImageEdit({ apiKey, imageBytes, rule, prompt }) {
     form.append("prompt", [
       "Create the next artwork in a collaborative AI remix relay.",
       `The relay rule is: change only the ${rule}.`,
+      `The TapeOut remix recipe is ${recipeCode}. Follow this recipe exactly.`,
       `Participant instruction: ${prompt}.`,
       `Candidate direction: ${direction}.`,
       "Return a polished standalone artwork with no text, UI, borders, watermarks, or triptych layout.",
@@ -209,7 +226,7 @@ async function callImageEdit({ apiKey, imageBytes, rule, prompt }) {
   return outputs;
 }
 
-async function callTextRemix({ apiKey, sourceText, rule, prompt }) {
+async function callTextRemix({ apiKey, sourceText, rule, prompt, recipeCode }) {
   const directions = [
     "保留核心事实，写出更有画面感的版本",
     "保留主题，换成更适合社交平台传播的表达",
@@ -224,7 +241,7 @@ async function callTextRemix({ apiKey, sourceText, rule, prompt }) {
         model: "gpt-5-mini",
         input: [
           { role: "system", content: "你是 AI Remix Relay 的文字接力编辑。每次只改变用户指定的维度，输出可直接发布的纯文本，不要解释过程，不要加引号。" },
-          { role: "user", content: `父作品：\n${sourceText}\n\n接力规则：只改变${rule}。\n本轮意图：${prompt}\n候选方向：${direction}` },
+          { role: "user", content: `父作品：\n${sourceText}\n\n接力规则：只改变${rule}。\nTapeOut Remix Recipe：${recipeCode}\n本轮意图：${prompt}\n候选方向：${direction}` },
         ],
         max_output_tokens: 700,
       }),
@@ -269,6 +286,7 @@ async function handleGenerate(request, env) {
   const relayId = safeText(body.relayId || RELAY_ID, 80);
   const rule = safeText(body.rule, 40);
   const prompt = safeText(body.prompt, 500);
+  const requestedContentType = safeText(body.contentType || "", 20);
   const idempotencyKey = safeText(body.idempotencyKey, 80);
   if (!parentNodeId || !ALLOWED_RULES.has(rule) || prompt.length < 4 || !idempotencyKey) return error("invalid_input", "父节点、规则、创作意图或请求标识无效。", 422);
   const previous = await env.DB.prepare("SELECT id, status FROM generations WHERE user_id = ? AND idempotency_key = ?").bind(identity.id, idempotencyKey).first();
@@ -276,8 +294,8 @@ async function handleGenerate(request, env) {
     if (previous.status !== "completed") return error("generation_in_progress", "同一请求正在处理或已经失败，请重新生成。", 409);
     const stored = await env.DB.prepare("SELECT id, ordinal, asset_key, content_type FROM candidates WHERE generation_id = ? ORDER BY ordinal").bind(previous.id).all();
     const generation = await env.DB.prepare("SELECT content_type FROM generations WHERE id = ?").bind(previous.id).first();
-    const candidateRows = await env.DB.prepare("SELECT id, ordinal, asset_key, content_type, content_hash FROM candidates WHERE generation_id = ? ORDER BY ordinal").bind(previous.id).all();
-    return json({ ok: true, generationId: previous.id, duplicate: true, candidates: candidateRows.results.map(row => ({ id: row.id, ordinal: row.ordinal, contentType: row.content_type || generation?.content_type || "image", contentHash: row.content_hash, assetUrl: `/api/assets/${encodeURIComponent(row.asset_key)}` })) });
+    const candidateRows = await env.DB.prepare("SELECT id, ordinal, asset_key, content_type, content_hash, recipe_code, circuit_input_commitment FROM candidates WHERE generation_id = ? ORDER BY ordinal").bind(previous.id).all();
+    return json({ ok: true, generationId: previous.id, duplicate: true, candidates: candidateRows.results.map(row => ({ id: row.id, ordinal: row.ordinal, contentType: row.content_type || generation?.content_type || "image", contentHash: row.content_hash, recipeCode: row.recipe_code || null, circuitInputCommitment: row.circuit_input_commitment || null, assetUrl: `/api/assets/${encodeURIComponent(row.asset_key)}` })) });
   }
   const recent = await env.DB.prepare("SELECT COUNT(*) AS count FROM generations WHERE user_id = ? AND created_at >= ?").bind(identity.id, new Date(Date.now() - 60_000).toISOString()).first();
   if (Number(recent?.count || 0) >= 2) return error("rate_limited", "生成过于频繁，请一分钟后再试。", 429);
@@ -286,16 +304,22 @@ async function handleGenerate(request, env) {
   try { parentAsset = await resolveParentAsset(parentNodeId, relayId, env); }
   catch { return error("parent_not_found", "父节点或其作品不存在。", 404); }
 
+  const contentType = parentAsset.contentType;
+  if (requestedContentType && requestedContentType !== contentType) return error("content_type_mismatch", "本轮内容类型必须与父节点一致。", 422);
+  const recipeCode = recipeFor(contentType, rule);
+  if (!recipeCode) return error("recipe_not_found", "当前内容类型没有可用的 Remix Recipe。", 422);
+  const circuitInput = { parentExists: true, contentTypeAllowed: true, ruleAllowed: true, attributionPreserved: true, licenseAccepted: true, splitWithinLimit: true, contentType, rule, recipeCode };
+  const circuitInputCommitment = await sha256(JSON.stringify(circuitInput));
   const generationId = crypto.randomUUID();
   const createdAt = new Date().toISOString();
-  await env.DB.prepare("INSERT INTO generations (id, user_id, relay_id, parent_node_id, rule, prompt, content_type, created_at, idempotency_key, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')").bind(generationId, identity.id, relayId, parentNodeId, rule, prompt, parentAsset.contentType, createdAt, idempotencyKey).run();
+  await env.DB.prepare("INSERT INTO generations (id, user_id, relay_id, parent_node_id, rule, prompt, content_type, recipe_code, circuit_input_commitment, created_at, idempotency_key, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')").bind(generationId, identity.id, relayId, parentNodeId, rule, prompt, contentType, recipeCode, circuitInputCommitment, createdAt, idempotencyKey).run();
   const reserved = await reserveCredit(env, identity.id, generationId);
   if (!reserved) { await env.DB.prepare("UPDATE generations SET status = 'failed', error_message = 'insufficient_credits' WHERE id = ?").bind(generationId).run(); return error("insufficient_credits", "免费额度已用完，请补充 Credits 后继续。", 402); }
   let generated;
   try {
     generated = parentAsset.contentType === "text"
-      ? await callTextRemix({ apiKey: env.OPENAI_API_KEY, sourceText: new TextDecoder().decode(parentAsset.bytes), rule, prompt })
-      : await callImageEdit({ apiKey: env.OPENAI_API_KEY, imageBytes: parentAsset.bytes, rule, prompt });
+      ? await callTextRemix({ apiKey: env.OPENAI_API_KEY, sourceText: new TextDecoder().decode(parentAsset.bytes), rule, prompt, recipeCode })
+      : await callImageEdit({ apiKey: env.OPENAI_API_KEY, imageBytes: parentAsset.bytes, rule, prompt, recipeCode });
   }
   catch (caught) { await refundCredit(env, identity.id, generationId); await env.DB.prepare("UPDATE generations SET status = 'failed', error_message = ? WHERE id = ?").bind(safeText(caught.message, 180), generationId).run(); return error("generation_failed", "图像生成失败，本次 Credit 已自动退回。", 502); }
 
@@ -308,8 +332,8 @@ async function handleGenerate(request, env) {
       const extension = item.contentType === "text" ? "txt" : "webp";
       const assetKey = `relays/${relayId}/generations/${generationId}/${index}.${extension}`;
       await env.BUCKET.put(assetKey, item.bytes, { httpMetadata: { contentType: item.mimeType || "image/webp" } }); storedKeys.push(assetKey);
-      await env.DB.prepare("INSERT INTO candidates (id, generation_id, ordinal, asset_key, revised_prompt, created_at, content_hash, content_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(id, generationId, index, assetKey, item.revisedPrompt, createdAt, item.contentHash, item.contentType || "image").run();
-      candidates.push({ id, ordinal: index, contentType: item.contentType || "image", contentHash: item.contentHash, previewText: item.previewText || null, assetUrl: `/api/assets/${encodeURIComponent(assetKey)}` });
+      await env.DB.prepare("INSERT INTO candidates (id, generation_id, ordinal, asset_key, revised_prompt, created_at, content_hash, content_type, recipe_code, circuit_input_commitment) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(id, generationId, index, assetKey, item.revisedPrompt, createdAt, item.contentHash, item.contentType || "image", recipeCode, circuitInputCommitment).run();
+      candidates.push({ id, ordinal: index, contentType: item.contentType || "image", contentHash: item.contentHash, recipeCode, circuitInputCommitment, previewText: item.previewText || null, assetUrl: `/api/assets/${encodeURIComponent(assetKey)}` });
     }
     await env.DB.prepare("UPDATE generations SET status = 'completed' WHERE id = ?").bind(generationId).run();
   } catch {
@@ -335,24 +359,24 @@ async function handlePublish(request, env) {
   const duplicate = await env.DB.prepare("SELECT id, parent_id, creator_name, title, asset_key, content_hash, license_code, split_bps, rule_result FROM nodes WHERE candidate_id = ?").bind(candidateId).first();
   if (duplicate) return json({ ok: true, duplicate: true, node: { id: duplicate.id, parent: duplicate.parent_id, creator: duplicate.creator_name, title: duplicate.title, assetUrl: `/api/assets/${encodeURIComponent(duplicate.asset_key)}`, contentHash: duplicate.content_hash, licenseCode: duplicate.license_code, splitBps: duplicate.split_bps, ruleResult: duplicate.rule_result ? JSON.parse(duplicate.rule_result) : null } });
   const candidate = await env.DB.prepare(
-    "SELECT c.id, c.asset_key, c.content_hash, c.content_type, c.generation_id, g.relay_id, g.parent_node_id, g.rule, g.prompt FROM candidates c JOIN generations g ON g.id = c.generation_id WHERE c.id = ? AND g.user_id = ? AND c.selected = 0"
+    "SELECT c.id, c.asset_key, c.content_hash, c.content_type, c.recipe_code, c.circuit_input_commitment, c.generation_id, g.relay_id, g.parent_node_id, g.rule, g.prompt FROM candidates c JOIN generations g ON g.id = c.generation_id WHERE c.id = ? AND g.user_id = ? AND c.selected = 0"
   ).bind(candidateId, identity.id).first();
   if (!candidate) return error("candidate_not_found", "候选作品不存在，或不属于当前用户。", 404);
 
   const nodeId = crypto.randomUUID();
   const createdAt = new Date().toISOString();
-  const ruleResult = circuitResult || { engine: "application-preflight", version: 1, passed: true, rule: candidate.rule, attributionPreserved: true, tapeOutCircuit: "pending" };
+  const ruleResult = circuitResult || { engine: "application-preflight", version: 1, passed: true, rule: candidate.rule, recipeCode: candidate.recipe_code, inputCommitment: candidate.circuit_input_commitment, attributionPreserved: true, tapeOutCircuit: "pending" };
   const receiptHash = await sha256(JSON.stringify({ relayId: candidate.relay_id, nodeId, parentId: candidate.parent_node_id, contentHash: candidate.content_hash, licenseCode, splitBps, ruleResult, createdAt }));
   const siblings = await env.DB.prepare("SELECT COUNT(*) AS count FROM nodes WHERE relay_id = ? AND parent_id = ?").bind(candidate.relay_id, candidate.parent_node_id).first();
   await env.DB.batch([
     env.DB.prepare("UPDATE candidates SET selected = 1 WHERE id = ? AND selected = 0").bind(candidateId),
     env.DB.prepare(
-      "INSERT INTO nodes (id, relay_id, parent_id, user_id, creator_name, title, rule, prompt, asset_key, receipt_hash, created_at, candidate_id, license_code, split_bps, rule_result, content_hash, content_type, mime_type, preview_text, circuit_result, circuit_tx_hash, registry_tx_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    ).bind(nodeId, candidate.relay_id, candidate.parent_node_id, identity.id, identity.handle, candidate.rule, candidate.rule, candidate.prompt, candidate.asset_key, receiptHash, createdAt, candidateId, licenseCode, splitBps, JSON.stringify(ruleResult), candidate.content_hash, candidate.content_type || "image", candidate.content_type === "text" ? "text/plain; charset=utf-8" : "image/webp", null, JSON.stringify(ruleResult), circuitTxHash, registryTxHash),
+      "INSERT INTO nodes (id, relay_id, parent_id, user_id, creator_name, title, rule, prompt, asset_key, receipt_hash, created_at, candidate_id, license_code, split_bps, rule_result, content_hash, content_type, mime_type, preview_text, circuit_result, circuit_tx_hash, registry_tx_hash, recipe_code, circuit_input_commitment) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    ).bind(nodeId, candidate.relay_id, candidate.parent_node_id, identity.id, identity.handle, candidate.rule, candidate.rule, candidate.prompt, candidate.asset_key, receiptHash, createdAt, candidateId, licenseCode, splitBps, JSON.stringify(ruleResult), candidate.content_hash, candidate.content_type || "image", candidate.content_type === "text" ? "text/plain; charset=utf-8" : "image/webp", null, JSON.stringify(ruleResult), circuitTxHash, registryTxHash, candidate.recipe_code || null, candidate.circuit_input_commitment || null),
   ]);
   return json({
     ok: true,
-    node: { id: nodeId, parent: candidate.parent_node_id, creator: identity.handle, title: candidate.rule, panel: 0, branch: Number(siblings?.count || 0) > 0, contentType: candidate.content_type || "image", assetUrl: `/api/assets/${encodeURIComponent(candidate.asset_key)}`, contentHash: candidate.content_hash, licenseCode, splitBps, ruleResult, circuitTxHash, registryTxHash },
+    node: { id: nodeId, parent: candidate.parent_node_id, creator: identity.handle, title: candidate.rule, panel: 0, branch: Number(siblings?.count || 0) > 0, contentType: candidate.content_type || "image", assetUrl: `/api/assets/${encodeURIComponent(candidate.asset_key)}`, contentHash: candidate.content_hash, licenseCode, splitBps, ruleResult, recipeCode: candidate.recipe_code || null, circuitInputCommitment: candidate.circuit_input_commitment || null, circuitTxHash, registryTxHash },
     receipt: { hash: receiptHash, createdAt, storage: "D1 + R2", chain: registryTxHash ? "xlayer" : "not-submitted", circuit: circuitTxHash ? "xlayer" : "not-submitted", registryTxHash, circuitTxHash },
   }, 201);
 }
