@@ -16,11 +16,11 @@ hybrid application: web frontend, AI/backend service, X Layer contracts, TapeOut
 
 ## Product Purpose
 
-AI Remix Relay 是一个 AI 驱动的多人接力创作网络。它把一次性的 AI 生成变成可继续传递的共创过程：每个版本都有明确的父作品、创作者、AI 调用、授权和贡献关系，并可继续产生下一代版本。首版成功标准是两个真实用户能够完成“Seed → AI remix → 发布下一棒 → 接力继续”的完整闭环。
+AI Remix Relay 是一个支持图片与文字的多人接力创作网络。它把一次性的 AI 生成变成可继续传递的共创过程：每个版本都有明确的父作品、内容类型、创作者、AI 调用、授权和贡献关系，并可继续产生下一代版本。首版成功标准是两个真实用户能够完成“Seed → AI remix → 发布下一棒 → 接力继续”的完整闭环。
 
 ## Positioning
 
-不是通用 AI 图片生成器、Campaign 管理工具、素材批量适配工具或 NFT 市场。独特机制是 Relay Graph：每个 AI 输出同时是一个可继续创作的节点。TapeOut Circuit 约束每一棒允许的变化与授权条件，X Layer 记录 parent-child、版本承诺和分成，AI 负责实际内容生成。
+不是通用 AI 图片生成器、Campaign 管理工具、素材批量适配工具或 NFT 市场。独特机制是 Relay Graph：每个 AI 输出同时是一个可继续创作的节点；同一套谱系也适用于文字接力。TapeOut Circuit 约束每一棒允许的变化与授权条件，X Layer 记录 parent-child、版本承诺和分成，AI 负责实际内容生成。
 
 ## Operating Context
 
@@ -28,7 +28,7 @@ AI Remix Relay 是一个 AI 驱动的多人接力创作网络。它把一次性�
 
 ## Capabilities and Constraints
 
-- 核心闭环：发现 Relay、接下一棒、AI 生成候选、选择版本、发布、查看谱系、邀请下一位。
+- 核心闭环：发现 Relay、选择图片或文字 Seed、接下一棒、AI 生成候选、选择版本、发布、查看谱系、邀请下一位。
 - Relay 节点必须包含 parent、creator、content hash、AI receipt、license、rule result、split、timestamp。
 - `RelayRule` TapeOut Circuit 负责判断 parent 是否存在、授权是否接受、变化类型是否允许、署名是否保留以及分支是否开放。
 - X Layer `RelayRegistry` 负责节点承诺、parent-child 关系、授权与分成；付费 Relay 通过合约结算。
@@ -49,7 +49,7 @@ AI Remix Relay 是一个 AI 驱动的多人接力创作网络。它把一次性�
 
 ## Evidence on Hand
 
-当前仓库已有服务器化的 AI Remix Relay：D1 保存 Relay、节点、邀请、Credits 与用量账本，R2 保存 Seed 和候选作品；用户可在没有 AI Key 时上传并发起真实 Seed、创建可追踪邀请、接受接棒、查看收件箱和自己的创作。节点记录真实文件哈希、授权、分成和应用层规则预检，生成接口具备限流、幂等、Credits 预扣与失败退款。公网 Worker 已部署，X Layer 只读 RPC 可运行。OpenAI Secret、RelayRule TapeOut Circuit、RelayRegistry 链上写入、真实支付、TapeSend 和 DeWEB 尚未完成，不能宣称为已交付能力。
+当前仓库已有服务器化的 AI Remix Relay：D1 保存 Relay、节点、邀请、Credits 与用量账本，R2 保存图片或文字 Seed 和候选作品；用户可在没有 AI Key 时上传并发起真实 Seed、创建可追踪邀请、接受接棒、查看收件箱和自己的创作。节点记录内容类型、真实文件哈希、授权、分成和应用层规则预检，生成接口具备限流、幂等、Credits 预扣与失败退款。公网 Worker 已部署，X Layer 只读 RPC 可运行。OpenAI Secret、RelayRule TapeOut Circuit、RelayRegistry 链上写入、真实支付、TapeSend 和 DeWEB 尚未完成，不能宣称为已交付能力。
 
 ## Product Principles
 
