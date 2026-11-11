@@ -1,14 +1,15 @@
-import { mkdir, readFile, rm, writeFile, copyFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile, copyFile, readdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const projectRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const distRoot = resolve(projectRoot, "dist");
-const [workerTemplate, page, artwork, manifest] = await Promise.all([
+const [workerTemplate, page, artwork, manifest, drizzleFiles] = await Promise.all([
   readFile(resolve(projectRoot, "worker/index.js"), "utf8"),
   readFile(resolve(projectRoot, "web/index.html"), "utf8"),
   readFile(resolve(projectRoot, "web/assets/relay-triptych.webp")),
   readFile(resolve(projectRoot, ".openai/hosting.json"), "utf8"),
+  readdir(resolve(projectRoot, "drizzle")),
 ]);
 
 const worker = workerTemplate
@@ -21,8 +22,5 @@ await mkdir(resolve(distRoot, ".openai"), { recursive: true });
 await mkdir(resolve(distRoot, "drizzle"), { recursive: true });
 await writeFile(resolve(distRoot, "server/index.js"), worker);
 await writeFile(resolve(distRoot, ".openai/hosting.json"), manifest);
-await Promise.all([
-  copyFile(resolve(projectRoot, "drizzle/0000_relay_core.sql"), resolve(distRoot, "drizzle/0000_relay_core.sql")),
-  copyFile(resolve(projectRoot, "drizzle/0001_commercial_core.sql"), resolve(distRoot, "drizzle/0001_commercial_core.sql")),
-]);
+await Promise.all(drizzleFiles.filter(file => file.endsWith(".sql")).map(file => copyFile(resolve(projectRoot, "drizzle", file), resolve(distRoot, "drizzle", file))));
 console.log(`Built ${distRoot}`);

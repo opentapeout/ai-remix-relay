@@ -2,7 +2,8 @@ const page = __PAGE_HTML__;
 const seedArtworkBase64 = __SEED_ARTWORK_BASE64__;
 
 const RELAY_ID = "city-signal-2049";
-const ALLOWED_RULES = new Set(["色彩气候", "构图重心", "时代氛围", "文字节奏"]);
+const ALLOWED_RULES = new Set(["色彩气候", "构图重心", "时代氛围", "文字节奏", "叙事视角", "语气风格", "情节推进", "标题钩子"]);
+const ALLOWED_CONTENT_TYPES = new Set(["image", "text"]);
 const ALLOWED_LICENSES = new Set(["CC-BY-NC-4.0", "CC-BY-4.0", "ALL-RIGHTS-RESERVED"]);
 const seedNodes = [
   { id: "n0", parent: null, creator: "@miko", title: "Seed", panel: 0, branch: false, assetUrl: "/assets/relay-triptych.webp" },
@@ -83,7 +84,7 @@ export function deriveBranchFlags(nodes) {
 
 async function loadNodes(env, relayId = RELAY_ID) {
   const result = await env.DB.prepare(
-    "SELECT id, parent_id, creator_name, title, asset_key, license_code, split_bps, rule_result, content_hash, created_at FROM nodes WHERE relay_id = ? ORDER BY created_at ASC LIMIT 250"
+    "SELECT id, parent_id, creator_name, title, asset_key, content_type, mime_type, preview_text, license_code, split_bps, rule_result, content_hash, created_at FROM nodes WHERE relay_id = ? ORDER BY created_at ASC LIMIT 250"
   ).bind(relayId).all();
   const persisted = result.results.map((row, index) => ({
     id: row.id,
@@ -92,6 +93,9 @@ async function loadNodes(env, relayId = RELAY_ID) {
     title: row.title,
     panel: index % 3,
     assetUrl: `/api/assets/${encodeURIComponent(row.asset_key)}`,
+    contentType: row.content_type || "image",
+    mimeType: row.mime_type || "image/webp",
+    previewText: row.preview_text || null,
     licenseCode: row.license_code,
     splitBps: row.split_bps,
     ruleResult: row.rule_result ? JSON.parse(row.rule_result) : null,
@@ -105,15 +109,15 @@ async function handleBootstrap(request, env, url) {
   const identity = requireIdentity(request);
   const relayId = safeText(url.searchParams.get("relay") || RELAY_ID, 80);
   const relay = relayId === RELAY_ID
-    ? { id: RELAY_ID, title: "City Signal 2049", description: "从一座漂浮城市开始，每一棒只能改变一个视觉维度。" }
-    : await env.DB.prepare("SELECT id, title, description FROM relays WHERE id = ? AND status = 'active'").bind(relayId).first();
+    ? { id: RELAY_ID, title: "City Signal 2049", description: "从一座漂浮城市开始，每一棒只能改变一个视觉维度。", content_type: "image" }
+    : await env.DB.prepare("SELECT id, title, description, content_type FROM relays WHERE id = ? AND status = 'active'").bind(relayId).first();
   if (!relay) return error("relay_not_found", "这个 Relay 不存在或已关闭。", 404);
   const nodes = await loadNodes(env, relayId);
   const inviteToken = safeText(url.searchParams.get("invite"), 80);
   const invite = inviteToken ? await env.DB.prepare("SELECT token, relay_id, node_id, sender_name, recipient_hint, status, accepted_by_user_id, created_at FROM invites WHERE token = ?").bind(inviteToken).first() : null;
   const userId = identity?.id;
   const credits = userId ? await env.DB.prepare("SELECT balance, lifetime_granted, lifetime_spent FROM credit_accounts WHERE user_id = ?").bind(userId).first() : null;
-  const mine = userId ? await env.DB.prepare("SELECT id, relay_id, parent_id, title, asset_key, content_hash, created_at FROM nodes WHERE user_id = ? ORDER BY created_at DESC LIMIT 50").bind(userId).all() : { results: [] };
+  const mine = userId ? await env.DB.prepare("SELECT id, relay_id, parent_id, title, asset_key, content_type, mime_type, preview_text, content_hash, created_at FROM nodes WHERE user_id = ? ORDER BY created_at DESC LIMIT 50").bind(userId).all() : { results: [] };
   const invites = userId ? await env.DB.prepare("SELECT token, relay_id, node_id, sender_name, status, accepted_at, created_at FROM invites WHERE accepted_by_user_id = ? OR sender_user_id = ? ORDER BY created_at DESC LIMIT 50").bind(userId, userId).all() : { results: [] };
   const feed = await env.DB.prepare("SELECT r.id, r.title, r.description, n.asset_key, r.created_at FROM relays r JOIN nodes n ON n.id = r.seed_node_id WHERE r.status = 'active' ORDER BY r.created_at DESC LIMIT 24").all();
   return json({
@@ -131,18 +135,19 @@ async function handleBootstrap(request, env, url) {
       storage: true,
       xLayer: { chainId: 196, mode: "read-only" },
       tapeOut: { mode: "planned", circuitId: null },
+      contentTypes: ["image", "text"],
     },
   });
 }
 
-async function resolveParentArtwork(parentNodeId, relayId, env) {
-  if (relayId === RELAY_ID && /^n[0-3]$/.test(parentNodeId)) return decodeBase64(seedArtworkBase64);
-  const row = await env.DB.prepare("SELECT asset_key FROM nodes WHERE id = ? AND relay_id = ?")
+async function resolveParentAsset(parentNodeId, relayId, env) {
+  if (relayId === RELAY_ID && /^n[0-3]$/.test(parentNodeId)) return { bytes: decodeBase64(seedArtworkBase64), contentType: "image", mimeType: "image/webp", previewText: null };
+  const row = await env.DB.prepare("SELECT asset_key, content_type, mime_type, preview_text FROM nodes WHERE id = ? AND relay_id = ?")
     .bind(parentNodeId, relayId).first();
   if (!row) throw new Error("parent_not_found");
   const object = await env.BUCKET.get(row.asset_key);
   if (!object) throw new Error("parent_asset_not_found");
-  return new Uint8Array(await object.arrayBuffer());
+  return { bytes: new Uint8Array(await object.arrayBuffer()), contentType: row.content_type || "image", mimeType: row.mime_type || "image/webp", previewText: row.preview_text || null };
 }
 
 async function callImageEdit({ apiKey, imageBytes, rule, prompt }) {
@@ -178,6 +183,35 @@ async function callImageEdit({ apiKey, imageBytes, rule, prompt }) {
     }
     const bytes = decodeBase64(payload.data[0].b64_json);
     outputs.push({ bytes, contentHash: await sha256Bytes(bytes), revisedPrompt: payload.data[0].revised_prompt || null });
+  }
+  return outputs;
+}
+
+async function callTextRemix({ apiKey, sourceText, rule, prompt }) {
+  const directions = [
+    "保留核心事实，写出更有画面感的版本",
+    "保留主题，换成更适合社交平台传播的表达",
+    "保留人物和冲突，打开一个意外但合理的新分支",
+  ];
+  const outputs = [];
+  for (const direction of directions) {
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        model: "gpt-5-mini",
+        input: [
+          { role: "system", content: "你是 AI Remix Relay 的文字接力编辑。每次只改变用户指定的维度，输出可直接发布的纯文本，不要解释过程，不要加引号。" },
+          { role: "user", content: `父作品：\n${sourceText}\n\n接力规则：只改变${rule}。\n本轮意图：${prompt}\n候选方向：${direction}` },
+        ],
+        max_output_tokens: 700,
+      }),
+    });
+    const payload = await response.json();
+    const text = payload.output_text?.trim();
+    if (!response.ok || !text) throw new Error(payload.error?.message || `text_provider_${response.status}`);
+    const bytes = new TextEncoder().encode(text);
+    outputs.push({ bytes, contentHash: await sha256Bytes(bytes), revisedPrompt: direction, contentType: "text", mimeType: "text/plain; charset=utf-8", previewText: text.slice(0, 280) });
   }
   return outputs;
 }
@@ -218,23 +252,28 @@ async function handleGenerate(request, env) {
   const previous = await env.DB.prepare("SELECT id, status FROM generations WHERE user_id = ? AND idempotency_key = ?").bind(identity.id, idempotencyKey).first();
   if (previous) {
     if (previous.status !== "completed") return error("generation_in_progress", "同一请求正在处理或已经失败，请重新生成。", 409);
-    const stored = await env.DB.prepare("SELECT id, ordinal, asset_key FROM candidates WHERE generation_id = ? ORDER BY ordinal").bind(previous.id).all();
-    return json({ ok: true, generationId: previous.id, duplicate: true, candidates: stored.results.map(row => ({ id: row.id, ordinal: row.ordinal, imageUrl: `/api/assets/${encodeURIComponent(row.asset_key)}` })) });
+    const stored = await env.DB.prepare("SELECT id, ordinal, asset_key, content_type FROM candidates WHERE generation_id = ? ORDER BY ordinal").bind(previous.id).all();
+    const generation = await env.DB.prepare("SELECT content_type FROM generations WHERE id = ?").bind(previous.id).first();
+    return json({ ok: true, generationId: previous.id, duplicate: true, candidates: stored.results.map(row => ({ id: row.id, ordinal: row.ordinal, contentType: row.content_type || generation?.content_type || "image", assetUrl: `/api/assets/${encodeURIComponent(row.asset_key)}` })) });
   }
   const recent = await env.DB.prepare("SELECT COUNT(*) AS count FROM generations WHERE user_id = ? AND created_at >= ?").bind(identity.id, new Date(Date.now() - 60_000).toISOString()).first();
   if (Number(recent?.count || 0) >= 2) return error("rate_limited", "生成过于频繁，请一分钟后再试。", 429);
 
-  let parentArtwork;
-  try { parentArtwork = await resolveParentArtwork(parentNodeId, relayId, env); }
+  let parentAsset;
+  try { parentAsset = await resolveParentAsset(parentNodeId, relayId, env); }
   catch { return error("parent_not_found", "父节点或其作品不存在。", 404); }
 
   const generationId = crypto.randomUUID();
   const createdAt = new Date().toISOString();
-  await env.DB.prepare("INSERT INTO generations (id, user_id, relay_id, parent_node_id, rule, prompt, created_at, idempotency_key, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')").bind(generationId, identity.id, relayId, parentNodeId, rule, prompt, createdAt, idempotencyKey).run();
+  await env.DB.prepare("INSERT INTO generations (id, user_id, relay_id, parent_node_id, rule, prompt, content_type, created_at, idempotency_key, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')").bind(generationId, identity.id, relayId, parentNodeId, rule, prompt, parentAsset.contentType, createdAt, idempotencyKey).run();
   const reserved = await reserveCredit(env, identity.id, generationId);
   if (!reserved) { await env.DB.prepare("UPDATE generations SET status = 'failed', error_message = 'insufficient_credits' WHERE id = ?").bind(generationId).run(); return error("insufficient_credits", "免费额度已用完，请补充 Credits 后继续。", 402); }
   let generated;
-  try { generated = await callImageEdit({ apiKey: env.OPENAI_API_KEY, imageBytes: parentArtwork, rule, prompt }); }
+  try {
+    generated = parentAsset.contentType === "text"
+      ? await callTextRemix({ apiKey: env.OPENAI_API_KEY, sourceText: new TextDecoder().decode(parentAsset.bytes), rule, prompt })
+      : await callImageEdit({ apiKey: env.OPENAI_API_KEY, imageBytes: parentAsset.bytes, rule, prompt });
+  }
   catch (caught) { await refundCredit(env, identity.id, generationId); await env.DB.prepare("UPDATE generations SET status = 'failed', error_message = ? WHERE id = ?").bind(safeText(caught.message, 180), generationId).run(); return error("generation_failed", "图像生成失败，本次 Credit 已自动退回。", 502); }
 
   const candidates = [];
@@ -242,10 +281,12 @@ async function handleGenerate(request, env) {
   try {
     for (let index = 0; index < generated.length; index += 1) {
       const id = crypto.randomUUID();
-      const assetKey = `relays/${relayId}/generations/${generationId}/${index}.webp`;
-      await env.BUCKET.put(assetKey, generated[index].bytes, { httpMetadata: { contentType: "image/webp" } }); storedKeys.push(assetKey);
-      await env.DB.prepare("INSERT INTO candidates (id, generation_id, ordinal, asset_key, revised_prompt, created_at, content_hash) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(id, generationId, index, assetKey, generated[index].revisedPrompt, createdAt, generated[index].contentHash).run();
-      candidates.push({ id, ordinal: index, imageUrl: `/api/assets/${encodeURIComponent(assetKey)}` });
+      const item = generated[index];
+      const extension = item.contentType === "text" ? "txt" : "webp";
+      const assetKey = `relays/${relayId}/generations/${generationId}/${index}.${extension}`;
+      await env.BUCKET.put(assetKey, item.bytes, { httpMetadata: { contentType: item.mimeType || "image/webp" } }); storedKeys.push(assetKey);
+      await env.DB.prepare("INSERT INTO candidates (id, generation_id, ordinal, asset_key, revised_prompt, created_at, content_hash, content_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(id, generationId, index, assetKey, item.revisedPrompt, createdAt, item.contentHash, item.contentType || "image").run();
+      candidates.push({ id, ordinal: index, contentType: item.contentType || "image", previewText: item.previewText || null, assetUrl: `/api/assets/${encodeURIComponent(assetKey)}` });
     }
     await env.DB.prepare("UPDATE generations SET status = 'completed' WHERE id = ?").bind(generationId).run();
   } catch {
@@ -267,7 +308,7 @@ async function handlePublish(request, env) {
   const duplicate = await env.DB.prepare("SELECT id, parent_id, creator_name, title, asset_key, content_hash, license_code, split_bps, rule_result FROM nodes WHERE candidate_id = ?").bind(candidateId).first();
   if (duplicate) return json({ ok: true, duplicate: true, node: { id: duplicate.id, parent: duplicate.parent_id, creator: duplicate.creator_name, title: duplicate.title, assetUrl: `/api/assets/${encodeURIComponent(duplicate.asset_key)}`, contentHash: duplicate.content_hash, licenseCode: duplicate.license_code, splitBps: duplicate.split_bps, ruleResult: duplicate.rule_result ? JSON.parse(duplicate.rule_result) : null } });
   const candidate = await env.DB.prepare(
-    "SELECT c.id, c.asset_key, c.content_hash, c.generation_id, g.relay_id, g.parent_node_id, g.rule, g.prompt FROM candidates c JOIN generations g ON g.id = c.generation_id WHERE c.id = ? AND g.user_id = ? AND c.selected = 0"
+    "SELECT c.id, c.asset_key, c.content_hash, c.content_type, c.generation_id, g.relay_id, g.parent_node_id, g.rule, g.prompt FROM candidates c JOIN generations g ON g.id = c.generation_id WHERE c.id = ? AND g.user_id = ? AND c.selected = 0"
   ).bind(candidateId, identity.id).first();
   if (!candidate) return error("candidate_not_found", "候选作品不存在，或不属于当前用户。", 404);
 
@@ -279,12 +320,12 @@ async function handlePublish(request, env) {
   await env.DB.batch([
     env.DB.prepare("UPDATE candidates SET selected = 1 WHERE id = ? AND selected = 0").bind(candidateId),
     env.DB.prepare(
-      "INSERT INTO nodes (id, relay_id, parent_id, user_id, creator_name, title, rule, prompt, asset_key, receipt_hash, created_at, candidate_id, license_code, split_bps, rule_result, content_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    ).bind(nodeId, candidate.relay_id, candidate.parent_node_id, identity.id, identity.handle, candidate.rule, candidate.rule, candidate.prompt, candidate.asset_key, receiptHash, createdAt, candidateId, licenseCode, splitBps, JSON.stringify(ruleResult), candidate.content_hash),
+      "INSERT INTO nodes (id, relay_id, parent_id, user_id, creator_name, title, rule, prompt, asset_key, receipt_hash, created_at, candidate_id, license_code, split_bps, rule_result, content_hash, content_type, mime_type, preview_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    ).bind(nodeId, candidate.relay_id, candidate.parent_node_id, identity.id, identity.handle, candidate.rule, candidate.rule, candidate.prompt, candidate.asset_key, receiptHash, createdAt, candidateId, licenseCode, splitBps, JSON.stringify(ruleResult), candidate.content_hash, candidate.content_type || "image", candidate.content_type === "text" ? "text/plain; charset=utf-8" : "image/webp", null),
   ]);
   return json({
     ok: true,
-    node: { id: nodeId, parent: candidate.parent_node_id, creator: identity.handle, title: candidate.rule, panel: 0, branch: Number(siblings?.count || 0) > 0, assetUrl: `/api/assets/${encodeURIComponent(candidate.asset_key)}`, contentHash: candidate.content_hash, licenseCode, splitBps, ruleResult },
+    node: { id: nodeId, parent: candidate.parent_node_id, creator: identity.handle, title: candidate.rule, panel: 0, branch: Number(siblings?.count || 0) > 0, contentType: candidate.content_type || "image", assetUrl: `/api/assets/${encodeURIComponent(candidate.asset_key)}`, contentHash: candidate.content_hash, licenseCode, splitBps, ruleResult },
     receipt: { hash: receiptHash, createdAt, storage: "D1 + R2", chain: "not-submitted" },
   }, 201);
 }
@@ -294,34 +335,39 @@ async function handleCreateSeed(request, env) {
   if (!identity) return error("authentication_required", "请先登录后再发起 Seed。", 401);
   let form;
   try { form = await request.formData(); } catch { return error("invalid_form", "上传内容无法解析。", 400); }
+  const contentType = safeText(form.get("contentType") || "image", 20);
   const file = form.get("artwork");
+  const text = safeText(form.get("textContent"), 10_000);
   const title = safeText(form.get("title"), 80);
   const description = safeText(form.get("description"), 280);
   const licenseCode = safeText(form.get("licenseCode") || "CC-BY-NC-4.0", 40);
   const splitBps = Number(form.get("splitBps") || 0);
-  if (!(file instanceof File) || file.size < 1 || file.size > 8_000_000) return error("invalid_file", "请选择不超过 8 MB 的 PNG、JPEG 或 WebP 图片。", 422);
-  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) return error("invalid_file_type", "仅支持 PNG、JPEG 或 WebP。", 422);
+  if (!ALLOWED_CONTENT_TYPES.has(contentType)) return error("invalid_content_type", "暂时支持图片和文字两种内容类型。", 422);
+  if (contentType === "image" && (!(file instanceof File) || file.size < 1 || file.size > 8_000_000)) return error("invalid_file", "请选择不超过 8 MB 的 PNG、JPEG 或 WebP 图片。", 422);
+  if (contentType === "image" && !["image/png", "image/jpeg", "image/webp"].includes(file.type)) return error("invalid_file_type", "仅支持 PNG、JPEG 或 WebP。", 422);
+  if (contentType === "text" && text.length < 10) return error("invalid_text", "文字 Seed 至少需要 10 个字符。", 422);
   if (title.length < 2 || !ALLOWED_LICENSES.has(licenseCode) || !Number.isInteger(splitBps) || splitBps < 0 || splitBps > 3000) return error("invalid_seed", "标题、授权或分成比例无效。", 422);
-  const bytes = new Uint8Array(await file.arrayBuffer());
+  const bytes = contentType === "text" ? new TextEncoder().encode(text) : new Uint8Array(await file.arrayBuffer());
   const contentHash = await sha256Bytes(bytes);
   const relayId = crypto.randomUUID();
   const nodeId = crypto.randomUUID();
   const createdAt = new Date().toISOString();
-  const extension = file.type === "image/png" ? "png" : file.type === "image/jpeg" ? "jpg" : "webp";
+  const extension = contentType === "text" ? "txt" : file.type === "image/png" ? "png" : file.type === "image/jpeg" ? "jpg" : "webp";
   const assetKey = `relays/${relayId}/seed/${nodeId}.${extension}`;
+  const mimeType = contentType === "text" ? "text/plain; charset=utf-8" : file.type;
   const ruleResult = { engine: "seed-policy", version: 1, passed: true, attributionPreserved: true, tapeOutCircuit: "pending" };
   const receiptHash = await sha256(JSON.stringify({ relayId, nodeId, contentHash, licenseCode, splitBps, createdAt }));
-  await env.BUCKET.put(assetKey, bytes, { httpMetadata: { contentType: file.type } });
+  await env.BUCKET.put(assetKey, bytes, { httpMetadata: { contentType: mimeType } });
   try {
     await env.DB.batch([
-      env.DB.prepare("INSERT INTO relays (id, owner_user_id, title, description, seed_node_id, status, created_at) VALUES (?, ?, ?, ?, ?, 'active', ?)").bind(relayId, identity.id, title, description, nodeId, createdAt),
-      env.DB.prepare("INSERT INTO nodes (id, relay_id, parent_id, user_id, creator_name, title, rule, prompt, asset_key, receipt_hash, created_at, license_code, split_bps, rule_result, content_hash) VALUES (?, ?, NULL, ?, ?, ?, 'Seed', ?, ?, ?, ?, ?, ?, ?, ?)").bind(nodeId, relayId, identity.id, identity.handle, title, description, assetKey, receiptHash, createdAt, licenseCode, splitBps, JSON.stringify(ruleResult), contentHash),
+      env.DB.prepare("INSERT INTO relays (id, owner_user_id, title, description, seed_node_id, status, created_at, content_type) VALUES (?, ?, ?, ?, ?, 'active', ?, ?)").bind(relayId, identity.id, title, description, nodeId, createdAt, contentType),
+      env.DB.prepare("INSERT INTO nodes (id, relay_id, parent_id, user_id, creator_name, title, rule, prompt, asset_key, receipt_hash, created_at, license_code, split_bps, rule_result, content_hash, content_type, mime_type, preview_text) VALUES (?, ?, NULL, ?, ?, ?, 'Seed', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(nodeId, relayId, identity.id, identity.handle, title, description, assetKey, receiptHash, createdAt, licenseCode, splitBps, JSON.stringify(ruleResult), contentHash, contentType, mimeType, contentType === "text" ? text.slice(0, 280) : null),
     ]);
   } catch (caught) {
     await env.BUCKET.delete(assetKey);
     throw caught;
   }
-  return json({ ok: true, relay: { id: relayId, title, description }, node: { id: nodeId, creator: identity.handle, title, assetUrl: `/api/assets/${encodeURIComponent(assetKey)}`, licenseCode, splitBps, contentHash } }, 201);
+  return json({ ok: true, relay: { id: relayId, title, description, contentType }, node: { id: nodeId, creator: identity.handle, title, contentType, previewText: contentType === "text" ? text.slice(0, 280) : null, assetUrl: `/api/assets/${encodeURIComponent(assetKey)}`, licenseCode, splitBps, contentHash } }, 201);
 }
 
 async function handleCreateInvite(request, env, url) {
