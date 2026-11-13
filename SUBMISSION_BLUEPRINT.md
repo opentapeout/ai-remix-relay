@@ -20,7 +20,7 @@
 
 | 官网条件 | 产品如何满足 | 必须提交的真实证据 | 当前状态 |
 |---|---|---|---|
-| 围绕 TapeOut 生态开发，并使用 X Layer 上的 TapeOut 电路、合约或链上数据，或运行于 X Layer DeWEB | 已加入 `RelayRule` Circuit 输入规范和 `RelayRegistry` 合约源码；发布流程已支持接收 Circuit/Registry 交易证据，待完成真实部署和调用 | Processor 地址、Circuit ID、Registry 地址、浏览器交易链接、成功调用日志 | **代码已准备，链上部署未完成** |
+| 围绕 TapeOut 生态开发，并使用 X Layer 上的 TapeOut 电路、合约或链上数据，或运行于 X Layer DeWEB | 已完成 `RelayRule` Circuit v1 流片；发布流程已加入 `RelayRegistry` 合约源码并准备接收 Circuit/Registry 交易证据 | Processor 地址、Circuit ID、Registry 地址、浏览器交易链接、成功调用日志 | **Circuit 已真实部署；Registry 与 Circuit 调用验证待完成** |
 | 面向 Web2/Web3 用户的真实需求 | 普通用户不必写复杂提示词即可参与 AI 共创；创作者不再丢失来源、署名、授权和后续贡献 | 至少 5 名外部测试用户；其中 2 个不同账户完成连续两棒；访谈记录 | 产品假设已确定，尚未验证 |
 | 可基于现有生态继续开发 | 优先复用官方 Processor、Circuit 工具、TapeKit 与标准钱包能力，不重复造链、钱包或 AI 模型 | 依赖清单和集成说明 | 待技术验证 |
 | 说明产品或服务 | 明确展示 Relay Feed、Relay Studio、AI 生成、发布、谱系、交接和创作者收益 | 可访问产品链接、产品说明、完整操作录像 | 定义完成，产品未完成 |
@@ -29,7 +29,7 @@
 | 说明用户付费理由 | 为更高质量/更多次数的 AI 生成、独家 Seed、创作者风格模板和商业使用授权付费 | 付费入口、权益差异、用户意愿访谈 | 未验证 |
 | 说明用户持续使用理由 | 收到下一棒邀请、观察自己作品产生新分支、参与限时 Relay、积累创作身份、获得后续分成 | 通知/收件箱、谱系活跃度、回访数据 | 机制已定义，未实现 |
 | 应用须提交访问链接并说明生态使用 | 提供公网应用 URL；逐项说明 TapeOut Circuit 与 X Layer 合约如何服务发布流程；DeWEB 成功后再提供 `tape://` | 公网 URL、生态集成页、合约/电路地址；可选 DeWEB URL | 当前只有本地页面，不合格 |
-| 已有项目须在活动期间有实质性新增开发 | 本次新增必须包含真实 AI、多用户 Relay、Circuit、Registry、谱系和交接，不把旧静态页面作为成果 | 活动期 commit、部署清单、测试、开发日志 | 待持续记录 |
+| 已有项目须在活动期间有实质性新增开发 | 本次新增必须包含真实 AI、多用户 Relay、Circuit、Registry、谱系和交接，不把旧静态页面作为成果 | 活动期 commit、部署清单、测试、开发日志 | 持续记录中 |
 | 截止时间 | 2026-12-07 23:59 UTC 前提交 | 表单回执与最终材料清单 | 未提交 |
 
 ## 三、四项评选标准逐条对照
@@ -111,6 +111,6 @@
 
 ## 六、当前真实结论
 
-目前项目**仍不符合最终提交条件**，但已从页面原型升级为服务器化产品：D1/R2 多用户数据与图片/文字作品存储、真实 Seed 上传、动态 Relay Feed、可追踪邀请与接受状态、我的创作、无限横向谱系、内容哈希、授权与分成字段、Credits 账本、限流、幂等发布和失败退款均已实现；本次新增了 `contracts/RelayRegistry.sol`、RelayRule Circuit 规范，以及可接收链上交易证据的发布接口。公网 Worker 已部署并真实读取 X Layer RPC。
+目前项目**仍不符合最终提交条件**，但已经获得第一份真实 X Layer TapeOut 证据：RelayRule Circuit v1 已部署到 X Layer 的 `PULSE Financial Indicators` Processor，Circuit ID 为 `#5`，TapeID 为 `5.2.414`，Processor 合约为 `0x9e2849c04a513fe64db07521cbe52d078d905c0e`，流片交易为 `0xdfd2d9d405cd1dbc882001c0f0752e715d3651f3024c442d28ce2f760f0cf8291`。截图显示交易成功并铸造了 Circuit #5；Container 尚未开通，目前不作为硬性阻塞。产品侧 D1/R2 多用户数据与图片/文字作品存储、真实 Seed 上传、动态 Relay Feed、可追踪邀请与接受状态、我的创作、无限横向谱系、内容哈希、授权与分成字段、Credits 账本、限流、幂等发布和失败退款均已实现；本次新增了 `contracts/RelayRegistry.sol`、RelayRule Circuit 规范，以及可接收链上交易证据的发布接口。公网 Worker 已部署并真实读取 X Layer RPC。
 
-当前硬缺口是 OpenAI Secret 尚未配置，因此不能验证真实图生图质量、成本和延迟；RelayRule TapeOut Circuit 与 X Layer RelayRegistry 也尚未部署。下一步是完成真实 AI 闭环和两账户连续两棒，再部署 Circuit 与 Registry 并生成链上证据。
+当前硬缺口是 Circuit 的真实调用结果、X Layer RelayRegistry 部署与 parent-child 写链交易、后端对交易回执的严格验证，以及公开官网和两账户连续两棒测试。OpenAI Secret 已配置，但仍需完成真实图生图质量、成本和延迟测试。下一步是验证 Circuit 输出，再部署 Registry 并生成完整链上 Receipt。

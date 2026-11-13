@@ -1,0 +1,22 @@
+.model relay_rule_v1
+
+# Policy inputs. All values are single-bit booleans (0 or 1).
+.inputs parentExists contentTypeAllowed ruleAllowed attributionPreserved licenseAccepted splitWithinLimit recipeBit0 recipeBit1 recipeBit2
+
+# Outputs: publish permission plus a 3-bit recipe code.
+.outputs allow recipeCode0 recipeCode1 recipeCode2
+
+# ALLOW = parentExists && contentTypeAllowed && ruleAllowed &&
+#         attributionPreserved && licenseAccepted && splitWithinLimit
+.names parentExists contentTypeAllowed ruleAllowed attributionPreserved licenseAccepted splitWithinLimit allow
+111111 1
+
+# Pass the requested recipe code through only when the policy is allowed.
+.names allow recipeBit0 recipeCode0
+11 1
+.names allow recipeBit1 recipeCode1
+11 1
+.names allow recipeBit2 recipeCode2
+11 1
+
+.end

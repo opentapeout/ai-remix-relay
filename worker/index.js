@@ -71,17 +71,150 @@ function validTxHash(value) {
   return /^0x[0-9a-fA-F]{64}$/.test(String(value || ""));
 }
 
+const DEFAULT_X_LAYER_RPC_URL = "https://rpc.xlayer.tech";
+const DEFAULT_TAPEOUT_PROCESSOR_ADDRESS = "0x9e2849c04a513fe64db07521cbe52d078d905c0e";
+const DEFAULT_TAPEOUT_CIRCUIT_ID = 5;
+const DEFAULT_TAPEOUT_TAPE_ID = "5.2.414";
+const TAPEOUT_SELECTORS = {
+  circuitInfo: "0x084d60f1",
+  eval: "0x934d06ea",
+};
+
+function hexWord(value) {
+  const numeric = typeof value === "bigint" ? value : BigInt(value);
+  return numeric.toString(16).padStart(64, "0");
+}
+
+function stripHex(value) {
+  return String(value || "").replace(/^0x/i, "");
+}
+
+function decodeUintWord(hex, index = 0) {
+  const clean = stripHex(hex);
+  const word = clean.slice(index * 64, (index + 1) * 64);
+  if (word.length !== 64) throw new Error("invalid_abi_word");
+  return Number(BigInt(`0x${word}`));
+}
+
+function encodeTapeOutEvalCall(circuitId, inputBytes) {
+  const bytes = stripHex(inputBytes);
+  if (!bytes || bytes.length % 2 !== 0) throw new Error("invalid_circuit_input_bytes");
+  return `${TAPEOUT_SELECTORS.eval}${hexWord(circuitId)}${hexWord(64)}${hexWord(bytes.length / 2)}${bytes.padEnd(Math.ceil(bytes.length / 64) * 64, "0")}`;
+}
+
+function decodeDynamicBytesResult(result) {
+  const clean = stripHex(result);
+  if (!clean) return "0x";
+  if (clean.length >= 128) {
+    const offset = Number(BigInt(`0x${clean.slice(0, 64)}`));
+    const lengthOffset = offset * 2;
+    if (Number.isFinite(offset) && clean.length >= lengthOffset + 64) {
+      const length = Number(BigInt(`0x${clean.slice(lengthOffset, lengthOffset + 64)}`));
+      const start = lengthOffset + 64;
+      const bytes = clean.slice(start, start + length * 2);
+      if (bytes.length === length * 2) return `0x${bytes}`;
+    }
+  }
+  return `0x${clean}`;
+}
+
+async function xLayerRpc(env, method, params = []) {
+  const rpcUrl = safeText(env.X_LAYER_RPC_URL, 200) || DEFAULT_X_LAYER_RPC_URL;
+  const response = await fetch(rpcUrl, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params }),
+  });
+  const payload = await response.json();
+  if (!response.ok || payload.error) {
+    const detail = payload.error?.message || `rpc_http_${response.status}`;
+    throw new Error(`xlayer_rpc_${detail}`);
+  }
+  return payload.result;
+}
+
+function packTapeOutInput(input) {
+  const policyKeys = ["parentExists", "contentTypeAllowed", "ruleAllowed", "attributionPreserved", "licenseAccepted", "splitWithinLimit"];
+  const bytes = [0, 0];
+  policyKeys.forEach((key, index) => { if (input[key]) bytes[0] |= (1 << index); });
+  const recipeIndex = Array.from(RECIPE_CODES.values()).indexOf(input.recipeCode);
+  if (recipeIndex < 0) throw new Error("recipe_not_found");
+  bytes[0] |= (recipeIndex & 1) << 6;
+  bytes[0] |= ((recipeIndex >> 1) & 1) << 7;
+  bytes[1] |= ((recipeIndex >> 2) & 1);
+  return `0x${bytes.map(byte => byte.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function decodeTapeOutOutput(outputBytes) {
+  const clean = stripHex(outputBytes);
+  const byte = clean.length >= 2 ? Number.parseInt(clean.slice(0, 2), 16) : 0;
+  const recipeBits = [(byte >> 1) & 1, (byte >> 2) & 1, (byte >> 3) & 1];
+  const recipeIndex = recipeBits[0] | (recipeBits[1] << 1) | (recipeBits[2] << 2);
+  return { allow: Boolean(byte & 1), recipeBits, recipeIndex, outputByte: `0x${byte.toString(16).padStart(2, "0")}` };
+}
+
+async function evaluateTapeOutCircuit(env, circuitInput) {
+  const processorAddress = safeText(env.TAPEOUT_PROCESSOR_ADDRESS, 42) || DEFAULT_TAPEOUT_PROCESSOR_ADDRESS;
+  const circuitId = Number(env.TAPEOUT_CIRCUIT_ID || DEFAULT_TAPEOUT_CIRCUIT_ID);
+  if (!/^0x[0-9a-fA-F]{40}$/.test(processorAddress) || !Number.isInteger(circuitId) || circuitId < 0) throw new Error("tapeout_config_invalid");
+  const inputBytes = packTapeOutInput(circuitInput);
+  const infoResult = await xLayerRpc(env, "eth_call", [{ to: processorAddress, data: `${TAPEOUT_SELECTORS.circuitInfo}${hexWord(circuitId)}` }, "latest"]);
+  const circuitInfo = { nIn: decodeUintWord(infoResult, 0), nOut: decodeUintWord(infoResult, 1), nState: decodeUintWord(infoResult, 2), gateCount: decodeUintWord(infoResult, 3) };
+  if (circuitInfo.nIn !== 9 || circuitInfo.nOut !== 4 || circuitInfo.nState !== 0) throw new Error("tapeout_circuit_shape_mismatch");
+  const outputResult = await xLayerRpc(env, "eth_call", [{ to: processorAddress, data: encodeTapeOutEvalCall(circuitId, inputBytes) }, "latest"]);
+  const outputBytes = decodeDynamicBytesResult(outputResult);
+  const decoded = decodeTapeOutOutput(outputBytes);
+  const blockNumber = await xLayerRpc(env, "eth_blockNumber", []);
+  return {
+    engine: "tapeout-circuit",
+    version: 1,
+    passed: decoded.allow,
+    chainId: 196,
+    processorAddress,
+    circuitId,
+    tapeId: safeText(env.TAPEOUT_TAPE_ID, 32) || DEFAULT_TAPEOUT_TAPE_ID,
+    inputBytes,
+    outputBytes,
+    circuitInfo,
+    allow: decoded.allow,
+    recipeBits: decoded.recipeBits,
+    recipeCode: circuitInput.recipeCode,
+    recipeIndex: decoded.recipeIndex,
+    execution: { method: "eth_call", blockTag: "latest", blockNumber },
+  };
+}
+
+function buildCircuitInput(candidate, licenseCode, splitBps) {
+  const contentType = candidate.content_type || "image";
+  const recipeCode = candidate.recipe_code || recipeFor(contentType, candidate.rule);
+  return {
+    parentExists: Boolean(candidate.parent_node_id),
+    contentTypeAllowed: ALLOWED_CONTENT_TYPES.has(contentType),
+    ruleAllowed: Boolean(recipeCode && recipeFor(contentType, candidate.rule) === recipeCode),
+    attributionPreserved: Boolean(candidate.parent_node_id),
+    licenseAccepted: ALLOWED_LICENSES.has(licenseCode),
+    splitWithinLimit: Number.isInteger(splitBps) && splitBps >= 0 && splitBps <= 3000,
+    contentType,
+    rule: candidate.rule,
+    recipeCode,
+  };
+}
+
 function chainIntegration(env) {
   const registryAddress = safeText(env.RELAY_REGISTRY_ADDRESS, 42);
-  const tapeOutProcessor = safeText(env.TAPEOUT_PROCESSOR_ADDRESS, 42);
-  const tapeOutCircuitId = safeText(env.TAPEOUT_CIRCUIT_ID, 32);
+  const tapeOutProcessor = safeText(env.TAPEOUT_PROCESSOR_ADDRESS, 42) || DEFAULT_TAPEOUT_PROCESSOR_ADDRESS;
+  const tapeOutCircuitId = safeText(env.TAPEOUT_CIRCUIT_ID, 32) || String(DEFAULT_TAPEOUT_CIRCUIT_ID);
   const tapeOutCircuitAddress = safeText(env.TAPEOUT_CIRCUIT_ADDRESS, 42);
+  const tapeOutCircuitTxHash = safeText(env.TAPEOUT_CIRCUIT_TX_HASH, 80);
   return {
     registryAddress: /^0x[0-9a-fA-F]{40}$/.test(registryAddress) ? registryAddress : null,
     tapeOut: {
       processorAddress: /^0x[0-9a-fA-F]{40}$/.test(tapeOutProcessor) ? tapeOutProcessor : null,
       circuitId: tapeOutCircuitId || null,
       circuitAddress: /^0x[0-9a-fA-F]{40}$/.test(tapeOutCircuitAddress) ? tapeOutCircuitAddress : null,
+      circuitTxHash: validTxHash(tapeOutCircuitTxHash) ? tapeOutCircuitTxHash : null,
+      tapeId: safeText(env.TAPEOUT_TAPE_ID, 32) || DEFAULT_TAPEOUT_TAPE_ID,
+      rpcUrl: safeText(env.X_LAYER_RPC_URL, 200) || DEFAULT_X_LAYER_RPC_URL,
     },
   };
 }
@@ -172,10 +305,48 @@ async function handleBootstrap(request, env, url) {
       database: true,
       storage: true,
       xLayer: { chainId: 196, mode: chainIntegration(env).registryAddress ? "registry-configured" : "read-only", registryAddress: chainIntegration(env).registryAddress },
-      tapeOut: { mode: chainIntegration(env).tapeOut.circuitAddress ? "circuit-configured" : "planned", ...chainIntegration(env).tapeOut },
+      tapeOut: { mode: chainIntegration(env).tapeOut.processorAddress ? "live-circuit" : "planned", ...chainIntegration(env).tapeOut },
       contentTypes: ["image", "text"],
     },
   });
+}
+
+async function handleCircuitStatus(env) {
+  const integration = chainIntegration(env);
+  try {
+    const result = await evaluateTapeOutCircuit(env, {
+      parentExists: true,
+      contentTypeAllowed: true,
+      ruleAllowed: true,
+      attributionPreserved: true,
+      licenseAccepted: true,
+      splitWithinLimit: true,
+      recipeCode: "TEXT_TONE_SHIFT",
+    });
+    return json({ ok: true, configured: true, ...result });
+  } catch (caught) {
+    return json({ ok: false, configured: Boolean(integration.tapeOut.processorAddress), error: { code: "tapeout_unavailable", message: safeText(caught.message, 240) }, integration: integration.tapeOut }, 503);
+  }
+}
+
+async function handleCircuitEval(request, env) {
+  let body;
+  try { body = await readJson(request); } catch { return error("invalid_json", "请求内容无效。", 400); }
+  const recipeCode = safeText(body.recipeCode || "TEXT_TONE_SHIFT", 80);
+  const input = {
+    parentExists: body.parentExists !== false,
+    contentTypeAllowed: body.contentTypeAllowed !== false,
+    ruleAllowed: body.ruleAllowed !== false,
+    attributionPreserved: body.attributionPreserved !== false,
+    licenseAccepted: body.licenseAccepted !== false,
+    splitWithinLimit: body.splitWithinLimit !== false,
+    recipeCode,
+  };
+  try {
+    return json({ ok: true, result: await evaluateTapeOutCircuit(env, input) });
+  } catch (caught) {
+    return error("tapeout_unavailable", safeText(caught.message, 240), 503);
+  }
 }
 
 async function resolveParentAsset(parentNodeId, relayId, env) {
@@ -351,7 +522,7 @@ async function handlePublish(request, env) {
   const candidateId = safeText(body.candidateId, 80);
   const licenseCode = safeText(body.licenseCode || "CC-BY-NC-4.0", 40);
   const splitBps = Number(body.splitBps ?? 0);
-  const circuitResult = body.circuitResult && typeof body.circuitResult === "object" ? body.circuitResult : null;
+  const submittedCircuitResult = body.circuitResult && typeof body.circuitResult === "object" ? body.circuitResult : null;
   const circuitTxHash = safeText(body.circuitTxHash, 80) || null;
   const registryTxHash = safeText(body.registryTxHash, 80) || null;
   if (!candidateId || !ALLOWED_LICENSES.has(licenseCode) || !Number.isInteger(splitBps) || splitBps < 0 || splitBps > 3000) return error("invalid_publication", "候选作品、授权方式或分成比例无效。", 422);
@@ -363,9 +534,25 @@ async function handlePublish(request, env) {
   ).bind(candidateId, identity.id).first();
   if (!candidate) return error("candidate_not_found", "候选作品不存在，或不属于当前用户。", 404);
 
+  const circuitInput = buildCircuitInput(candidate, licenseCode, splitBps);
+  let circuitResult;
+  try {
+    circuitResult = await evaluateTapeOutCircuit(env, circuitInput);
+  } catch (caught) {
+    return error("tapeout_unavailable", "无法读取 X Layer TapeOut Circuit，请稍后重试；本次不会产生链上费用。", 503, { reason: safeText(caught.message, 200) });
+  }
+  if (!circuitResult.passed) {
+    return error("circuit_rejected", "TapeOut Circuit 未通过本次发布条件，作品不会被发布。", 422, { circuitResult, input: circuitInput });
+  }
+
   const nodeId = crypto.randomUUID();
   const createdAt = new Date().toISOString();
-  const ruleResult = circuitResult || { engine: "application-preflight", version: 1, passed: true, rule: candidate.rule, recipeCode: candidate.recipe_code, inputCommitment: candidate.circuit_input_commitment, attributionPreserved: true, tapeOutCircuit: "pending" };
+  const ruleResult = {
+    ...circuitResult,
+    rule: candidate.rule,
+    inputCommitment: candidate.circuit_input_commitment,
+    submittedResultAccepted: Boolean(submittedCircuitResult),
+  };
   const receiptHash = await sha256(JSON.stringify({ relayId: candidate.relay_id, nodeId, parentId: candidate.parent_node_id, contentHash: candidate.content_hash, licenseCode, splitBps, ruleResult, createdAt }));
   const siblings = await env.DB.prepare("SELECT COUNT(*) AS count FROM nodes WHERE relay_id = ? AND parent_id = ?").bind(candidate.relay_id, candidate.parent_node_id).first();
   await env.DB.batch([
@@ -472,6 +659,8 @@ export default {
       return new Response(decodeBase64(seedArtworkBase64), { headers: { "content-type": "image/webp", "cache-control": "public, max-age=31536000, immutable" } });
     }
     if (request.method === "GET" && url.pathname === "/api/bootstrap") return handleBootstrap(request, env, url);
+    if (request.method === "GET" && url.pathname === "/api/circuit/status") return handleCircuitStatus(env);
+    if (request.method === "POST" && url.pathname === "/api/circuit/eval") return handleCircuitEval(request, env);
     if (request.method === "POST" && url.pathname === "/api/generate") return handleGenerate(request, env);
     if (request.method === "POST" && url.pathname === "/api/nodes") return handlePublish(request, env);
     if (request.method === "POST" && url.pathname === "/api/seeds") return handleCreateSeed(request, env);
