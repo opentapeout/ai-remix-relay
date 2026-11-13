@@ -379,7 +379,7 @@
             <div class="evidence-strip">
               <div class="evidence-intro"><h3>真实进度，不用标签冒充集成。</h3><p>只有产生可核验地址、交易或回执的能力，才会在最终提交材料中标为完成。</p></div>
               <div class="evidence-item"><span>X Layer</span><b class="status-real" id="evidenceChainStatus">正在读取真实 RPC</b><code id="evidenceChain">chainId — · block —</code></div>
-              <div class="evidence-item"><span>TapeOut RelayRule</span><b class="status-pending">待部署</b><code>Processor / Circuit ID 尚未生成</code></div>
+              <div class="evidence-item"><span>TapeOut RelayRule</span><b class="status-pending" id="evidenceTapeOutStatus">正在读取 Circuit</b><code id="evidenceTapeOut">Processor / Circuit ID</code></div>
               <div class="evidence-item"><span>RelayRegistry</span><b class="status-pending">待部署</b><code>应用层记录已保存至 D1，链上写入尚未启用</code></div>
             </div>
           </div>
@@ -401,7 +401,7 @@
       <div class="receipt-row"><span>Content hash</span><code id="receiptContentHash">—</code></div>
       <div class="receipt-row"><span>Receipt hash</span><code id="receiptHash">—</code></div>
       <div class="receipt-row"><span>License</span><b id="receiptLicense">—</b></div>
-      <div class="receipt-row"><span>AI receipt</span><b class="status-pending">Pending provider integration</b></div>
+      <div class="receipt-row"><span>TapeOut receipt</span><b id="receiptCircuit" class="status-pending">发布时由 X Layer Circuit 复核</b></div>
       <div class="receipt-row"><span>Storage</span><b id="receiptStorage">D1 + R2</b></div>
       <div class="receipt-row"><span>X Layer tx</span><b class="status-pending">Not submitted</b></div>
     </div>
@@ -485,7 +485,7 @@
         var selected=visible[0];if(selected){selected.classList.add('active');selected.setAttribute('aria-pressed','true');state.rule=selected.dataset.rule}
         $('promptInput').placeholder=state.contentType==='text'?'例如：让它更像一封写给未来自己的短信。':'例如：让城市信号更明亮，像刚收到来自未来的好消息。';
         $('promptInput').value=state.contentType==='text'?'把这段文字改成更有画面感、适合分享的版本。':'让城市信号变得更明亮，像刚刚收到来自未来的好消息。';
-        var recipe=recipeLabels[contentLabel(state.contentType)+':'+state.rule]||recipeLabels['图片:色彩气候'];$('recipePreview').innerHTML='<b>Remix Recipe 预览 · '+escapeText(recipe[0])+'</b><span>'+escapeText(recipe[1])+'</span><code>当前为应用层预览；接入 TapeOut Circuit 后，最终 Recipe 以链上 Circuit 输出为准。</code>';
+        var recipe=recipeLabels[contentLabel(state.contentType)+':'+state.rule]||recipeLabels['图片:色彩气候'];$('recipePreview').innerHTML='<b>Remix Recipe 预览 · '+escapeText(recipe[0])+'</b><span>'+escapeText(recipe[1])+'</span><code>发布前由 X Layer TapeOut Circuit #5 复核谱系、授权与分成条件。</code>';
         $('publishStatus').innerHTML='<b>规则已锁定</b>'+contentLabel(state.contentType)+' · 本次只允许改变“'+escapeText(state.rule)+'”';
       }
       async function bootstrap(){
@@ -498,7 +498,7 @@
           state.contentType=(currentNode().contentType||payload.relay.content_type||'image');refreshContentMode();
           var ai=payload.integrations.ai;
           $('engineDisclosure').innerHTML=ai?'<b>真实 AI 创作引擎已连接</b><br>三个候选由服务端基于父作品生成，作品与谱系会跨设备保存。':'<b>多人数据与作品存储已连接</b><br>真实 AI Secret 尚未配置；生成按钮会明确提示，不会回退到演示图片。';
-          if(payload.integrations.tapeOut&&payload.integrations.tapeOut.circuitAddress){$('evidenceChainStatus').textContent='Circuit 已配置';$('evidenceChainStatus').className='status-real';$('evidenceChain').textContent='Circuit '+payload.integrations.tapeOut.circuitId+' · '+payload.integrations.tapeOut.circuitAddress}else{$('evidenceChainStatus').textContent='待部署';$('evidenceChainStatus').className='status-pending';$('evidenceChain').textContent='Processor / Circuit ID 尚未生成'}
+          if(payload.integrations.tapeOut&&payload.integrations.tapeOut.processorAddress){$('evidenceTapeOutStatus').textContent='Circuit 已接入';$('evidenceTapeOutStatus').className='status-real';$('evidenceTapeOut').textContent='Circuit #'+payload.integrations.tapeOut.circuitId+' · TapeID '+(payload.integrations.tapeOut.tapeId||'—')+' · Processor '+payload.integrations.tapeOut.processorAddress.slice(0,10)+'…'}else{$('evidenceTapeOutStatus').textContent='待部署';$('evidenceTapeOutStatus').className='status-pending';$('evidenceTapeOut').textContent='Processor / Circuit ID 尚未生成'}
           if(payload.integrations.xLayer&&payload.integrations.xLayer.registryAddress){var registryCode=document.querySelector('#evidence [class="evidence-item"]:last-child code');if(registryCode)registryCode.textContent=payload.integrations.xLayer.registryAddress;var registryStatus=document.querySelector('#evidence [class="evidence-item"]:last-child b');if(registryStatus){registryStatus.textContent='Registry 已配置';registryStatus.className='status-real'}}
           if(state.invite){$('inviteMessage').textContent=state.invite.sender_name+' 邀请你从节点 '+state.invite.node_id.slice(0,8)+' 接下一棒。状态：'+state.invite.status;$('inviteBanner').classList.add('show');$('acceptInvite').disabled=!state.invite.canAccept}
           $('generateCandidates').disabled=false;renderAll();
@@ -533,7 +533,7 @@
         var button=this;button.disabled=true;button.textContent='正在发布…';
         try{
           var licenseCode=$('licenseCode').value;var splitBps=Math.round(Number($('splitBps').value||0)*100);var selectedCandidate=state.candidates[state.selectedCandidate];var registryTxHash=await publishToRegistry(selectedCandidate);var payload=await api('/api/nodes',{method:'POST',body:JSON.stringify({candidateId:state.selectedCandidateId,licenseCode:licenseCode,splitBps:splitBps,registryTxHash:registryTxHash})});if(!payload.duplicate)state.nodes.push(payload.node);state.selectedNode=payload.node.id;renderAll();
-          $('receiptNode').textContent=payload.node.id.slice(0,12);$('receiptParent').textContent=(payload.node.parent||'—').slice(0,12);$('receiptRule').textContent=payload.node.title;$('receiptCreator').textContent=payload.node.creator;$('receiptContentHash').textContent=payload.node.contentHash||'—';$('receiptHash').textContent=payload.receipt?payload.receipt.hash:'已存在';$('receiptLicense').textContent=payload.node.licenseCode||licenseCode;$('receiptStorage').textContent=payload.receipt?(payload.receipt.registryTxHash?'D1 + R2 + X Layer':'D1 + R2'):'D1 + R2';
+          $('receiptNode').textContent=payload.node.id.slice(0,12);$('receiptParent').textContent=(payload.node.parent||'—').slice(0,12);$('receiptRule').textContent=payload.node.title;$('receiptCreator').textContent=payload.node.creator;$('receiptContentHash').textContent=payload.node.contentHash||'—';$('receiptHash').textContent=payload.receipt?payload.receipt.hash:'已存在';$('receiptLicense').textContent=payload.node.licenseCode||licenseCode;$('receiptCircuit').textContent=payload.node.ruleResult&&payload.node.ruleResult.passed?'Circuit #'+payload.node.ruleResult.circuitId+' 已复核 · eth_call':'Circuit 未复核';$('receiptCircuit').className=payload.node.ruleResult&&payload.node.ruleResult.passed?'status-real':'status-pending';$('receiptStorage').textContent=payload.receipt?(payload.receipt.registryTxHash?'D1 + R2 + X Layer':'D1 + R2'):'D1 + R2';
           lastFocus=button;$('receiptDrawer').removeAttribute('inert');$('receiptDrawer').classList.add('open');$('receiptDrawer').setAttribute('aria-hidden','false');$('closeDrawer').focus();showToast('下一棒已发布到公共谱系');
           state.generated=false;state.selectedCandidateId=null;
         }catch(error){showToast(error.message)}finally{button.disabled=!state.selectedCandidateId;button.textContent='发布为下一棒'}
