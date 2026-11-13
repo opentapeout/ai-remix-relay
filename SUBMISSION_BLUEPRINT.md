@@ -113,4 +113,4 @@
 
 目前项目**仍不符合最终提交条件**，但已经获得第一份真实 X Layer TapeOut 证据：RelayRule Circuit v1 已部署到 X Layer 的 `PULSE Financial Indicators` Processor，Circuit ID 为 `#5`，TapeID 为 `5.2.414`，Processor 合约为 `0x9e2849c04a513fe64db07521cbe52d078d905c0e`，流片交易为 `0xdfd2d9d405cd1dbc882001c0f0752e715d3651f3024c442d28ce2f760f0cf8291`。截图显示交易成功并铸造了 Circuit #5；Container 尚未开通，目前不作为硬性阻塞。产品侧 D1/R2 多用户数据与图片/文字作品存储、真实 Seed 上传、动态 Relay Feed、可追踪邀请与接受状态、我的创作、无限横向谱系、内容哈希、授权与分成字段、Credits 账本、限流、幂等发布和失败退款均已实现；本次新增了真实 Circuit ABI 编码、X Layer `eth_call` 验证、发布前强制 Circuit gate、`/api/circuit/status` 与 `/api/circuit/eval` 只读接口、`contracts/RelayRegistry.sol`、RelayRule Circuit 规范，以及可接收链上交易证据的发布接口。公网 Worker 已部署并真实读取 X Layer RPC。
 
-当前硬缺口是 X Layer RelayRegistry 部署与 parent-child 写链交易、后端对交易回执的严格验证，以及公开官网和两账户连续两棒测试。OpenAI Secret 已配置，但仍需完成真实图生图质量、成本和延迟测试。下一步是部署 Registry、完成第一笔链上 Receipt，并做双账户连续两棒验收。
+当前硬缺口是 X Layer RelayRegistry 部署与 Seed/parent-child 写链交易、后端对交易回执的严格验证，以及公开官网和两账户连续两棒测试。Registry 现已增加 owner-only Seed bootstrap，并修正前端 `publishNode` ABI selector；部署后必须先注册 Seed，再执行第一笔 child 交易。OpenAI Secret 已配置，但仍需完成真实图生图质量、成本和延迟测试。下一步是部署 Registry、完成第一笔链上 Receipt，并做双账户连续两棒验收。
