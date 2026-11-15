@@ -2,7 +2,7 @@ const page = __PAGE_HTML__;
 const seedArtworkBase64 = __SEED_ARTWORK_BASE64__;
 
 const RELAY_ID = "city-signal-2049";
-const ALLOWED_RULES = new Set(["色彩气候", "构图重心", "时代氛围", "文字节奏", "叙事视角", "语气风格", "情节推进", "标题钩子"]);
+const ALLOWED_RULES = new Set(["色彩气候", "构图重心", "时代氛围", "文字节奏", "叙事视角", "语气风格", "情节推进", "标题钩子", "自由创作"]);
 const ALLOWED_CONTENT_TYPES = new Set(["image", "text"]);
 const RECIPE_CODES = new Map([
   ["image:色彩气候", "IMAGE_COLOR_SHIFT"],
@@ -220,6 +220,13 @@ function chainIntegration(env) {
 }
 
 function recipeFor(contentType, rule) {
+  if (rule === "自由创作") {
+    // Keep the existing 3-bit TapeOut recipe space stable while allowing
+    // the participant instruction itself to be free-form. The rule hash and
+    // prompt remain part of the node evidence; the circuit validates the
+    // generic content-type recipe plus attribution/licensing/split policy.
+    return contentType === "text" ? "TEXT_TONE_SHIFT" : "IMAGE_TEXT_RHYTHM";
+  }
   return RECIPE_CODES.get(`${contentType}:${rule}`) || null;
 }
 
@@ -412,7 +419,7 @@ async function callTextRemix({ apiKey, sourceText, rule, prompt, recipeCode }) {
         model: "gpt-5-mini",
         input: [
           { role: "system", content: "你是 AI Remix Relay 的文字接力编辑。每次只改变用户指定的维度，输出可直接发布的纯文本，不要解释过程，不要加引号。" },
-          { role: "user", content: `父作品：\n${sourceText}\n\n接力规则：只改变${rule}。\nTapeOut Remix Recipe：${recipeCode}\n本轮意图：${prompt}\n候选方向：${direction}` },
+          { role: "user", content: `父作品：\n${sourceText}\n\n接力规则：${rule === "自由创作" ? "自由完成任务，但保留核心事实、父作品来源和署名" : `只改变${rule}`}。\nTapeOut Remix Recipe：${recipeCode}\n本轮意图：${prompt}\n候选方向：${direction}` },
         ],
         max_output_tokens: 700,
       }),

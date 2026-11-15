@@ -297,12 +297,12 @@
         <section class="section" id="studio">
           <div class="section-inner">
             <div class="section-title">
-              <h2>这一棒，<br>你想改变什么？</h2>
-              <p>先锁定一个变化维度，再补充你的想法。服务端会以当前作品为参考生成三个真实候选；只有你选中的版本会进入公共谱系。</p>
+              <h2>这一棒，<br>你想推进什么？</h2>
+              <p>可以选择一个变化维度，也可以开启自由创作，直接描述任务。服务端会以当前内容为参考生成三个真实候选；只有你选中的版本会进入公共谱系。</p>
             </div>
             <div class="studio">
               <div class="studio-control">
-                <h3>接力规则</h3>
+                <h3>创作方式</h3>
                 <div class="mode-switch" id="contentTypeChips" aria-label="内容类型">
                   <button class="mode-chip active" type="button" data-content-type="image" aria-pressed="true">图片二创</button>
                   <button class="mode-chip" type="button" data-content-type="text" aria-pressed="false">文字二创</button>
@@ -312,10 +312,12 @@
                   <button class="rule-chip" type="button" data-rule="构图重心" data-content="image" aria-pressed="false">构图重心</button>
                   <button class="rule-chip" type="button" data-rule="时代氛围" data-content="image" aria-pressed="false">时代氛围</button>
                   <button class="rule-chip" type="button" data-rule="文字节奏" data-content="image" aria-pressed="false">文字节奏</button>
+                  <button class="rule-chip" type="button" data-rule="自由创作" data-content="image" aria-pressed="false">自由创作</button>
                   <button class="rule-chip" type="button" data-rule="叙事视角" data-content="text" aria-pressed="false" hidden>叙事视角</button>
                   <button class="rule-chip" type="button" data-rule="语气风格" data-content="text" aria-pressed="false" hidden>语气风格</button>
                   <button class="rule-chip" type="button" data-rule="情节推进" data-content="text" aria-pressed="false" hidden>情节推进</button>
                   <button class="rule-chip" type="button" data-rule="标题钩子" data-content="text" aria-pressed="false" hidden>标题钩子</button>
+                  <button class="rule-chip" type="button" data-rule="自由创作" data-content="text" aria-pressed="false" hidden>自由创作</button>
                 </div>
                 <div class="recipe-preview" id="recipePreview" role="status" aria-live="polite"><b>Remix Recipe 预览</b><span>选择内容类型和规则后，这里会显示本轮允许 AI 使用的创作配方。</span></div>
                 <label class="field"><span>给这一棒的创作意图</span><textarea id="promptInput">让城市信号变得更明亮，像刚刚收到来自未来的好消息。</textarea></label>
@@ -446,10 +448,12 @@
         '图片:构图重心':['IMAGE_COMPOSITION_SHIFT','保留主体，只调整视觉重心与空间关系'],
         '图片:时代氛围':['IMAGE_ERA_SHIFT','保留主体，只改变时代感和环境叙事'],
         '图片:文字节奏':['IMAGE_TEXT_RHYTHM','保留画面，只改变文字层的节奏与语义'],
+        '图片:自由创作':['IMAGE_TEXT_RHYTHM','直接描述任务；保留父作品来源、署名和可追溯证据'],
         '文字:叙事视角':['TEXT_NARRATIVE_LENS','保留事实，只改变讲述者与叙事视角'],
         '文字:语气风格':['TEXT_TONE_SHIFT','保留意思，只改变语气、节奏和表达风格'],
         '文字:情节推进':['TEXT_PLOT_BRANCH','保留人物与主题，打开一个新的情节分支'],
-        '文字:标题钩子':['TEXT_TITLE_HOOK','保留核心内容，只重写标题和传播钩子']
+        '文字:标题钩子':['TEXT_TITLE_HOOK','保留核心内容，只重写标题和传播钩子'],
+        '文字:自由创作':['TEXT_TONE_SHIFT','直接描述任务；保留父作品来源、署名和可追溯证据']
       };
       function renderTextPreview(node,className){return '<span class="'+className+'">'+escapeText(node.previewText||'文字 Seed · 选择这一棒继续改写')+'</span>'}
       async function api(path,options){
@@ -483,10 +487,11 @@
         var visible=Array.from($('ruleChips').querySelectorAll('[data-content]')).filter(function(item){return item.dataset.content===state.contentType});
         $('ruleChips').querySelectorAll('[data-content]').forEach(function(item){item.hidden=item.dataset.content!==state.contentType;item.classList.remove('active');item.setAttribute('aria-pressed','false')});
         var selected=visible[0];if(selected){selected.classList.add('active');selected.setAttribute('aria-pressed','true');state.rule=selected.dataset.rule}
-        $('promptInput').placeholder=state.contentType==='text'?'例如：让它更像一封写给未来自己的短信。':'例如：让城市信号更明亮，像刚收到来自未来的好消息。';
-        $('promptInput').value=state.contentType==='text'?'把这段文字改成更有画面感、适合分享的版本。':'让城市信号变得更明亮，像刚刚收到来自未来的好消息。';
+        var freeform=state.rule==='自由创作';
+        $('promptInput').placeholder=freeform?'例如：整理成给老板汇报的三点结论，补充风险和下一步。':(state.contentType==='text'?'例如：让它更像一封写给未来自己的短信。':'例如：让城市信号更明亮，像刚收到来自未来的好消息。');
+        $('promptInput').value=freeform?'直接描述你希望这一棒完成的任务。':(state.contentType==='text'?'把这段文字改成更有画面感、适合分享的版本。':'让城市信号变得更明亮，像刚刚收到来自未来的好消息。');
         var recipe=recipeLabels[contentLabel(state.contentType)+':'+state.rule]||recipeLabels['图片:色彩气候'];$('recipePreview').innerHTML='<b>Remix Recipe 预览 · '+escapeText(recipe[0])+'</b><span>'+escapeText(recipe[1])+'</span><code>发布前由 X Layer TapeOut Circuit #5 复核谱系、授权与分成条件。</code>';
-        $('publishStatus').innerHTML='<b>规则已锁定</b>'+contentLabel(state.contentType)+' · 本次只允许改变“'+escapeText(state.rule)+'”';
+        $('publishStatus').innerHTML=freeform?'<b>自由创作已开启</b>'+contentLabel(state.contentType)+' · 直接描述这一棒要完成的任务':'<b>规则已锁定</b>'+contentLabel(state.contentType)+' · 本次只允许改变“'+escapeText(state.rule)+'”';
       }
       async function bootstrap(){
         try{
@@ -509,7 +514,7 @@
       $('ruleChips').querySelectorAll('.rule-chip').forEach(function(chip){chip.addEventListener('click',function(){
         if(chip.hidden)return;
         $('ruleChips').querySelectorAll('.rule-chip').forEach(function(item){item.classList.remove('active');item.setAttribute('aria-pressed','false')});chip.classList.add('active');chip.setAttribute('aria-pressed','true');state.rule=chip.dataset.rule;
-        $('publishStatus').innerHTML='<b>规则已锁定</b>本次只允许改变“'+escapeText(state.rule)+'”';
+        $('publishStatus').innerHTML=state.rule==='自由创作'?'<b>自由创作已开启</b>直接描述这一棒要完成的任务':'<b>规则已锁定</b>本次只允许改变“'+escapeText(state.rule)+'”';
       })});
       $('candidateGrid').querySelectorAll('.candidate').forEach(function(candidate){candidate.addEventListener('click',function(){
         $('candidateGrid').querySelectorAll('.candidate').forEach(function(item){item.classList.remove('selected');item.setAttribute('aria-pressed','false')});candidate.classList.add('selected');candidate.setAttribute('aria-pressed','true');state.selectedCandidate=Number(candidate.dataset.candidate);state.selectedCandidateId=state.candidates[state.selectedCandidate].id;
