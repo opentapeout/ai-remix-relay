@@ -184,6 +184,7 @@
     .mode-switch{display:flex;gap:7px;flex-wrap:wrap;margin:-4px 0 10px}.mode-chip{border:1px solid var(--line);background:transparent;padding:8px 11px;border-radius:999px;font-size:12px;cursor:pointer}.mode-chip.active{background:var(--blue);color:#fff;border-color:var(--blue)}
     .content-type-badge{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:999px;padding:4px 8px;font-size:10px;color:var(--ink-soft);margin-top:8px}
     .recipe-preview{border:1px solid var(--line);background:#efe7d8;border-radius:9px;padding:12px;margin-top:14px;font-size:12px}.recipe-preview b{display:block;font-size:13px;margin-bottom:4px}.recipe-preview code{font-size:10px;color:var(--blue);word-break:break-all}
+    .workspace-switch{display:flex;gap:8px;margin:0 0 18px;padding:4px;border:1px solid var(--line);border-radius:12px;background:var(--paper-2);max-width:520px}.workspace-switch button{flex:1;border:0;background:transparent;border-radius:8px;padding:10px 12px;font-weight:700;font-size:13px;cursor:pointer}.workspace-switch button.active{background:var(--ink);color:#fff}.assistant-workspace{border:1px solid var(--ink);background:var(--paper-2);box-shadow:var(--shadow);padding:24px}.assistant-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start}.assistant-head h3{margin:0;font-size:24px}.assistant-head p{margin:5px 0 0;color:var(--ink-soft);font-size:13px}.assistant-messages{min-height:260px;max-height:460px;overflow:auto;display:grid;gap:12px;margin:20px 0;padding:4px}.assistant-message{max-width:82%;padding:13px 15px;border-radius:12px;font-size:14px;white-space:pre-wrap}.assistant-message.user{justify-self:end;background:var(--blue);color:#fff}.assistant-message.assistant{justify-self:start;background:#efe7d8;border:1px solid var(--line)}.assistant-compose{display:grid;grid-template-columns:1fr auto;gap:10px}.assistant-compose textarea{min-height:88px}.assistant-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.assistant-actions button{border:1px solid var(--line);background:transparent;border-radius:999px;padding:8px 11px;font-size:12px;cursor:pointer}.assistant-actions button:hover{background:#fff}.assistant-status{font-size:12px;color:var(--ink-soft);margin-top:10px}
     .stage-text-display{position:absolute;inset:0;padding:clamp(28px,6vw,84px);display:flex;align-items:center;background:linear-gradient(135deg,#111 0%,#2d2b27 48%,#173be8 100%);color:#fff;font-size:clamp(21px,3.2vw,46px);font-weight:700;line-height:1.18;letter-spacing:-.03em;overflow:auto}
     .rail-text,.graph-text{background:var(--ink);color:var(--paper);padding:8px;font-size:10px;line-height:1.3;overflow:hidden;white-space:pre-wrap}
     @media(max-width:1100px){
@@ -300,6 +301,10 @@
               <h2>这一棒，<br>你想推进什么？</h2>
               <p>可以选择一个变化维度，也可以开启自由创作，直接描述任务。服务端会以当前内容为参考生成三个真实候选；只有你选中的版本会进入公共谱系。</p>
             </div>
+            <div class="workspace-switch" role="tablist" aria-label="工作台模式">
+              <button class="active" id="modeCandidates" type="button" role="tab" aria-selected="true">候选创作</button>
+              <button id="modeAssistant" type="button" role="tab" aria-selected="false">对话工作台</button>
+            </div>
             <div class="studio">
               <div class="studio-control">
                 <h3>创作方式</h3>
@@ -340,6 +345,13 @@
                   <button class="btn btn-blue" id="publishNode" type="button" disabled>生成后发布到 Relay</button>
                 </div>
               </div>
+            </div>
+            <div class="assistant-workspace" id="assistantWorkspace" hidden>
+              <div class="assistant-head"><div><h3>AI 工作台</h3><p>直接描述任务，助手可以回答、整理、起草和规划下一步。</p></div><span class="credit-chip">对话模式</span></div>
+              <div class="assistant-messages" id="assistantMessages" aria-live="polite"><div class="assistant-message assistant">你好，我可以帮你推进这一棒。你可以直接说：整理成汇报、改写文案、拆解任务，或准备交接给下一位。</div></div>
+              <div class="assistant-compose"><textarea id="assistantInput" placeholder="描述你希望完成的任务，例如：把当前内容整理成给总监看的执行方案。"></textarea><button class="btn btn-blue" id="assistantSend" type="button">发送</button></div>
+              <div class="assistant-actions"><button type="button" data-assist-prompt="把当前内容整理成一页执行摘要，包含目标、现状、风险和下一步。">生成执行摘要</button><button type="button" data-assist-prompt="把当前内容拆成可交给组长执行的任务清单，并标出优先级。">拆解任务</button><button type="button" data-assist-prompt="写一段专业的交接说明，说明已完成内容、待办事项和验收标准。">准备交接</button></div>
+              <div class="assistant-status" id="assistantStatus">回答会保存在当前页面会话中；发布、交接和上链仍需你确认。</div>
             </div>
           </div>
         </section>
@@ -516,6 +528,12 @@
         $('ruleChips').querySelectorAll('.rule-chip').forEach(function(item){item.classList.remove('active');item.setAttribute('aria-pressed','false')});chip.classList.add('active');chip.setAttribute('aria-pressed','true');state.rule=chip.dataset.rule;
         $('publishStatus').innerHTML=state.rule==='自由创作'?'<b>自由创作已开启</b>直接描述这一棒要完成的任务':'<b>规则已锁定</b>本次只允许改变“'+escapeText(state.rule)+'”';
       })});
+      var assistantHistory=[];
+      function appendAssistantMessage(role,content){var item=document.createElement('div');item.className='assistant-message '+role;item.textContent=content;$('assistantMessages').appendChild(item);$('assistantMessages').scrollTop=$('assistantMessages').scrollHeight}
+      async function sendAssistantMessage(){var input=$('assistantInput');var message=input.value.trim();if(message.length<2){input.focus();return}appendAssistantMessage('user',message);input.value='';$('assistantSend').disabled=true;$('assistantStatus').textContent='AI 正在整理这一棒…';try{var payload=await api('/api/assist',{method:'POST',body:JSON.stringify({message,history:assistantHistory,contentType:state.contentType,parentTitle:currentNode().title||'当前节点'})});assistantHistory.push({role:'user',content:message},{role:'assistant',content:payload.reply});appendAssistantMessage('assistant',payload.reply);$('assistantStatus').textContent=payload.actions&&payload.actions.length?'已生成建议操作；执行链上或交接动作前需要你确认。':'可以继续追问或要求我改成执行清单。'}catch(error){appendAssistantMessage('assistant','暂时无法完成：'+(error.message||'请稍后重试'));$('assistantStatus').textContent='请检查登录状态和 AI 服务配置。'}finally{$('assistantSend').disabled=false}}
+      $('assistantSend').addEventListener('click',sendAssistantMessage);$('assistantInput').addEventListener('keydown',function(event){if((event.ctrlKey||event.metaKey)&&event.key==='Enter')sendAssistantMessage()});document.querySelectorAll('[data-assist-prompt]').forEach(function(button){button.addEventListener('click',function(){$('assistantInput').value=button.dataset.assistPrompt;$('assistantInput').focus()})});
+      $('modeCandidates').addEventListener('click',function(){$('modeCandidates').classList.add('active');$('modeAssistant').classList.remove('active');$('modeCandidates').setAttribute('aria-selected','true');$('modeAssistant').setAttribute('aria-selected','false');$('assistantWorkspace').hidden=true;$('studio').hidden=false});
+      $('modeAssistant').addEventListener('click',function(){$('modeAssistant').classList.add('active');$('modeCandidates').classList.remove('active');$('modeAssistant').setAttribute('aria-selected','true');$('modeCandidates').setAttribute('aria-selected','false');$('studio').hidden=true;$('assistantWorkspace').hidden=false;$('assistantInput').focus()});
       $('candidateGrid').querySelectorAll('.candidate').forEach(function(candidate){candidate.addEventListener('click',function(){
         $('candidateGrid').querySelectorAll('.candidate').forEach(function(item){item.classList.remove('selected');item.setAttribute('aria-pressed','false')});candidate.classList.add('selected');candidate.setAttribute('aria-pressed','true');state.selectedCandidate=Number(candidate.dataset.candidate);state.selectedCandidateId=state.candidates[state.selectedCandidate].id;
       })});

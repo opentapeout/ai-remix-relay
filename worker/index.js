@@ -521,6 +521,50 @@ async function handleGenerate(request, env) {
   return json({ ok: true, generationId, candidates, credits: account }, 201);
 }
 
+async function handleAssist(request, env) {
+  if (!env.OPENAI_API_KEY) return error("provider_not_configured", "真实 AI 助手尚未配置。", 503);
+  const identity = requireIdentity(request);
+  if (!identity) return error("authentication_required", "请先登录后使用 AI 工作台。", 401);
+  let body;
+  try { body = await readJson(request); } catch { return error("invalid_json", "请求内容无效。", 400); }
+  const message = safeText(body.message, 8000);
+  if (message.length < 2) return error("invalid_input", "请先描述你希望完成的任务。", 422);
+  const contentType = safeText(body.contentType || "text", 20);
+  const parentTitle = safeText(body.parentTitle || "当前 Relay 节点", 160);
+  const history = Array.isArray(body.history) ? body.history.slice(-8).map(item => ({
+    role: item?.role === "assistant" ? "assistant" : "user",
+    content: safeText(item?.content, 4000),
+  })).filter(item => item.content) : [];
+  const system = [
+    "你是 AI Remix Relay 的专业工作台助手。",
+    "你的任务是帮助用户推进一个可交接、可追溯的工作节点。",
+    "可以回答问题、整理任务、起草文案、拆解步骤、提出下一步行动。",
+    "不要声称已经发送消息、签署钱包或完成链上交易；这些动作必须由用户确认。",
+    `当前内容类型：${contentType === "image" ? "图片" : "文字/任务"}。当前父节点：${parentTitle}。`,
+    "回答要直接、专业、可执行；需要输出文案时直接给成稿。",
+  ].join("\n");
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: { authorization: `Bearer ${env.OPENAI_API_KEY}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      model: "gpt-5-mini",
+      input: [
+        { role: "system", content: system },
+        ...history,
+        { role: "user", content: message },
+      ],
+      max_output_tokens: 900,
+    }),
+  });
+  const payload = await response.json();
+  const reply = payload.output_text?.trim();
+  if (!response.ok || !reply) return error("assistant_failed", payload.error?.message || `assistant_provider_${response.status}`, 502);
+  const actions = [];
+  if (/交接|下一位|组长|总监|老板/.test(message)) actions.push({ id: "handoff", label: "创建交接链接" });
+  if (/发布|上链|提交/.test(message)) actions.push({ id: "publish", label: "进入发布确认" });
+  return json({ ok: true, reply, actions }, 200);
+}
+
 async function handlePublish(request, env) {
   const identity = requireIdentity(request);
   if (!identity) return error("authentication_required", "请先登录后再发布。", 401);
@@ -669,6 +713,7 @@ export default {
     if (request.method === "GET" && url.pathname === "/api/circuit/status") return handleCircuitStatus(env);
     if (request.method === "POST" && url.pathname === "/api/circuit/eval") return handleCircuitEval(request, env);
     if (request.method === "POST" && url.pathname === "/api/generate") return handleGenerate(request, env);
+    if (request.method === "POST" && url.pathname === "/api/assist") return handleAssist(request, env);
     if (request.method === "POST" && url.pathname === "/api/nodes") return handlePublish(request, env);
     if (request.method === "POST" && url.pathname === "/api/seeds") return handleCreateSeed(request, env);
     if (request.method === "POST" && url.pathname === "/api/invites") return handleCreateInvite(request, env, url);
