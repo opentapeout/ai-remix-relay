@@ -5,6 +5,11 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "validate": "node scripts/validate-artifact.mjs",
-    "test": "node --test tests/core.test.mjs"
+    "test": "node --test tests/core.test.mjs",
+    "prepare:preview": "node scripts/prepare-preview.mjs",
+    "preview": "npm run prepare:preview && npx --yes wrangler@4 d1 migrations apply ai-remix-relay-local --local --config wrangler.toml && npx --yes wrangler@4 dev --config wrangler.toml --ip 127.0.0.1 --port 4173"
+  },
+  "devDependencies": {
+    "viem": "^2.57.20"
   }
 }

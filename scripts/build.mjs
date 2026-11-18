@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile, copyFile, readdir } from "node:fs/promises";
+import { mkdir, readFile, writeFile, copyFile, readdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -16,7 +16,6 @@ const worker = workerTemplate
   .replace("__PAGE_HTML__", JSON.stringify(page))
   .replace("__SEED_ARTWORK_BASE64__", JSON.stringify(artwork.toString("base64")));
 
-await rm(distRoot, { recursive: true, force: true });
 await mkdir(resolve(distRoot, "server"), { recursive: true });
 await mkdir(resolve(distRoot, ".openai"), { recursive: true });
 await mkdir(resolve(distRoot, "drizzle"), { recursive: true });

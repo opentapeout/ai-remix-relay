@@ -1,0 +1,3 @@
+ALTER TABLE generations ADD COLUMN circuit_result TEXT;
+ALTER TABLE generations ADD COLUMN license_code TEXT NOT NULL DEFAULT 'CC-BY-NC-4.0';
+ALTER TABLE generations ADD COLUMN split_bps INTEGER NOT NULL DEFAULT 0;

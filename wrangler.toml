@@ -1,0 +1,24 @@
+name = "ai-remix-relay-local"
+main = "work/preview-runtime/worker.mjs"
+compatibility_date = "2026-11-16"
+
+[dev]
+ip = "127.0.0.1"
+port = 4173
+
+[vars]
+RELAY_REGISTRY_ADDRESS = "0xEE292a9815CA0C30b5a7c1227B8953351F54b286"
+TAPEOUT_PROCESSOR_ADDRESS = "0x9e2849c04a513fe64db07521cbe52d078d905c0e"
+TAPEOUT_CIRCUIT_ID = "5"
+TAPEOUT_TAPE_ID = "5.2.414"
+TAPEOUT_CIRCUIT_TX_HASH = "0xdfd2d9d405cd1dbc882001c0f0752e715d3651f3024c442d28ce2f760f0cf8291"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ai-remix-relay-local"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "drizzle"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "ai-remix-relay-local"

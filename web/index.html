@@ -79,6 +79,7 @@
     .stage-panel h2{font-size:clamp(34px,3.2vw,58px);line-height:1.02;letter-spacing:-.04em;margin:0;max-width:670px}
     .stage-panel>p{font-size:17px;color:var(--ink-soft);max-width:620px;margin:18px 0 28px}
     .current-baton{border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);padding:18px 0;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
+    .intent-note{padding:12px 0;border-bottom:1px dashed var(--line);font-size:12px;color:var(--ink-soft)}.intent-note b{color:var(--ink)}.intent-note p{margin:5px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
     .avatar{width:42px;height:42px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-weight:800}
     .baton-copy b{display:block;font-size:14px}
     .baton-copy span{display:block;font-size:12px;color:var(--ink-soft);margin-top:2px}
@@ -106,6 +107,8 @@
     .studio-control{padding:28px;border-right:1px solid var(--ink)}
     .studio-control h3,.candidate-area h3{margin:0 0 18px;font-size:18px}
     .field{display:block;margin:18px 0}
+    .field .brief-input{width:100%;min-height:44px;border:1px solid var(--line);background:#fffdf8;padding:11px 13px;border-radius:9px;color:var(--ink)}
+    .field small{display:block;color:var(--ink-soft);font-size:11px;line-height:1.45;margin-top:6px}
     .field>span{display:block;font-size:12px;font-weight:700;margin-bottom:7px}
     textarea{width:100%;min-height:110px;border:1px solid var(--line);background:#fffdf8;padding:13px;border-radius:9px;resize:vertical;color:var(--ink)}
     textarea:focus{border-color:var(--blue)}
@@ -126,6 +129,7 @@
     .candidate:nth-child(3) .candidate-art{background-position:right center}
     .candidate-meta{display:flex;justify-content:space-between;align-items:center;padding:9px 3px 3px;font-size:11px}
     .candidate-meta b{font-size:12px}
+    .candidate-angle{display:block;padding:0 3px 8px;color:var(--ink-soft);font-size:11px;line-height:1.4}
     .publish-bar{margin-top:18px;border-top:1px solid var(--line);padding-top:18px;display:flex;align-items:center;gap:12px;justify-content:space-between}
     .publish-status{font-size:12px;color:var(--ink-soft)}
     .publish-status b{display:block;color:var(--green)}
@@ -199,7 +203,7 @@
       .layout{display:block}.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:14px 16px}
       .sidebar h2,.side-bottom{display:none}.feed-list{display:flex;overflow:auto}.feed-item{flex:0 0 190px}.feed-thumb{height:88px}
       .stage{min-height:auto}.stage-art{min-height:510px}.stage-panel{padding:28px 20px}.art-caption{left:20px;bottom:20px;right:20px}.art-caption h1{font-size:42px}.edition{display:none}
-      .section{padding:64px 20px}.section-title{display:block}.section-title p{margin-top:18px}.candidate-grid{grid-template-columns:1fr}.candidate{display:grid;grid-template-columns:110px 1fr}.candidate-art{aspect-ratio:1}.candidate-meta{padding:12px}
+      .section{padding:64px 20px}.section-title{display:block}.section-title p{margin-top:18px}.candidate-grid{grid-template-columns:1fr}.candidate{display:grid;grid-template-columns:110px 1fr;grid-template-rows:auto auto}.candidate-art{aspect-ratio:1;grid-row:1/3}.candidate-meta{padding:12px 12px 5px}.candidate-angle{padding:0 12px 12px}
       .publish-bar{display:block}.publish-bar .btn{width:100%;margin-top:14px}.graph-shell{margin-left:-20px;margin-right:-20px;padding:22px 20px}.invite-banner{align-items:flex-start}.publication-options{grid-template-columns:1fr}
       .price-row{grid-template-columns:1fr}.evidence-strip{grid-template-columns:1fr}.evidence-intro,.evidence-item{border-right:0}.footer{padding:28px 20px;display:block}.footer span{display:block;margin-top:10px}
     }
@@ -272,12 +276,13 @@
           </div>
           <div class="stage-panel">
             <h2>别从空白开始。<br>接过这一棒。</h2>
-            <p>选一个已有版本，告诉 AI 这一棒只改变什么。你的结果会成为下一位参与者的新起点。</p>
+            <p>选一个已有版本，告诉 AI 这一棒只改变什么。选中的结果会成为下一位的新起点，父子关系、署名与授权沿作品谱系保留。</p>
             <div class="current-baton">
               <span class="avatar" id="creatorAvatar">S</span>
               <span class="baton-copy"><b id="batonName">@sola 传来的第 3 棒</b><span id="batonTime">18 分钟前 · 父节点 NODE 02</span></span>
               <span class="open-badge">可接力</span>
             </div>
+            <div class="intent-note" id="intentNote" hidden></div>
             <div class="rule-sheet" aria-label="本棒规则">
               <div class="rule-row"><svg class="icon" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg><strong>只改变一个视觉维度</strong><span>RelayRule 01</span></div>
               <div class="rule-row"><svg class="icon" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg><strong>保留父作品署名</strong><span>Attribution</span></div>
@@ -299,7 +304,7 @@
           <div class="section-inner">
             <div class="section-title">
               <h2>这一棒，<br>你想推进什么？</h2>
-              <p>可以选择一个变化维度，也可以开启自由创作，直接描述任务。服务端会以当前内容为参考生成三个真实候选；只有你选中的版本会进入公共谱系。</p>
+              <p>先说清这一棒要保留什么、改变什么。AI 会围绕 TapeOut 放行的变化配方生成三种不同走向；你比较并选定后，作品才进入 Relay 谱系。</p>
             </div>
             <div class="workspace-switch" role="tablist" aria-label="工作台模式">
               <button class="active" id="modeCandidates" type="button" role="tab" aria-selected="true">候选创作</button>
@@ -325,16 +330,17 @@
                   <button class="rule-chip" type="button" data-rule="自由创作" data-content="text" aria-pressed="false" hidden>自由创作</button>
                 </div>
                 <div class="recipe-preview" id="recipePreview" role="status" aria-live="polite"><b>Remix Recipe 预览</b><span>选择内容类型和规则后，这里会显示本轮允许 AI 使用的创作配方。</span></div>
-                <label class="field"><span>给这一棒的创作意图</span><textarea id="promptInput">让城市信号变得更明亮，像刚刚收到来自未来的好消息。</textarea></label>
+                <label class="field"><span>这一棒必须保留</span><input class="brief-input" id="preserveInput" type="text" maxlength="220" value="城市主体、核心构图与原作来源"><small>明确哪些内容不能被 AI 改掉；图片和文字接力都适用。</small></label>
+                <label class="field"><span>这一棒要改变什么</span><textarea id="promptInput">让城市信号变得更明亮，像刚刚收到来自未来的好消息。</textarea><small>AI 只在所选规则允许的范围内探索。文字节奏模式下，请写出需要出现的具体文字。</small></label>
                 <div class="engine-disclosure" id="engineDisclosure" role="status" aria-live="polite"><b>正在连接创作引擎</b><br>检查 AI、多人数据库与作品存储状态。未配置的能力会明确提示，不会用假数据替代。</div>
                 <button class="btn btn-dark" id="generateCandidates" type="button" style="width:100%">生成 3 个候选</button>
               </div>
               <div class="candidate-area">
                 <h3>候选版本</h3>
                 <div class="candidate-grid" id="candidateGrid">
-                  <button class="candidate" type="button" data-candidate="0" aria-pressed="false" disabled><span class="candidate-art"></span><span class="candidate-meta"><b>保留结构</b><span>候选 A</span></span></button>
-                  <button class="candidate" type="button" data-candidate="1" aria-pressed="false" disabled><span class="candidate-art"></span><span class="candidate-meta"><b>增强信号</b><span>候选 B</span></span></button>
-                  <button class="candidate" type="button" data-candidate="2" aria-pressed="false" disabled><span class="candidate-art"></span><span class="candidate-meta"><b>打开分支</b><span>候选 C</span></span></button>
+                  <button class="candidate" type="button" data-candidate="0" aria-pressed="false" disabled><span class="candidate-art"></span><span class="candidate-meta"><b>克制延展</b><span>候选 A</span></span><span class="candidate-angle">贴近原作，轻量推进所选变化</span></button>
+                  <button class="candidate" type="button" data-candidate="1" aria-pressed="false" disabled><span class="candidate-art"></span><span class="candidate-meta"><b>强化表达</b><span>候选 B</span></span><span class="candidate-angle">让允许的变化更清晰、更鲜明</span></button>
+                  <button class="candidate" type="button" data-candidate="2" aria-pressed="false" disabled><span class="candidate-art"></span><span class="candidate-meta"><b>意外分支</b><span>候选 C</span></span><span class="candidate-angle">在同一规则内探索新方向</span></button>
                 </div>
                 <div class="publication-options">
                   <label>二创授权<select id="licenseCode"><option value="CC-BY-NC-4.0">署名—非商业使用</option><option value="CC-BY-4.0">署名即可使用</option><option value="ALL-RIGHTS-RESERVED">保留全部权利</option></select></label>
@@ -432,7 +438,7 @@
       var $=function(id){return document.getElementById(id)};
       var toast=$('toast');
       var state={
-        relayId:'city-signal-2049',selectedNode:'n2',selectedCandidate:0,selectedCandidateId:null,rule:'色彩气候',contentType:'image',generated:false,identity:'@guest',mine:[],invites:[],invite:null,integrations:null,
+        relayId:'city-signal-2049',selectedNode:'n2',selectedCandidate:0,selectedCandidateId:null,pendingRegistryTxHash:null,pendingRegistryCandidateId:null,rule:'色彩气候',contentType:'image',generated:false,identity:'@guest',mine:[],invites:[],invite:null,integrations:null,
         nodes:[
           {id:'n0',parent:null,creator:'@miko',title:'Seed',panel:0,branch:false,assetUrl:'/assets/relay-triptych.webp'},
           {id:'n1',parent:'n0',creator:'@lin',title:'Signal',panel:1,branch:false,assetUrl:'/assets/relay-triptych.webp'},
@@ -446,7 +452,7 @@
       async function sha256Hex(value){var bytes=typeof value==='string'?new TextEncoder().encode(value):value;var digest=await crypto.subtle.digest('SHA-256',bytes);return '0x'+Array.from(new Uint8Array(digest)).map(function(byte){return byte.toString(16).padStart(2,'0')}).join('')}
       function word(value){return String(value).replace(/^0x/,'').padStart(64,'0')}
       async function registryCalldata(candidate){var node=currentNode();var relayHash=await sha256Hex(state.relayId);var parentHash=await sha256Hex(node.id);var contentHash=candidate.contentHash||await sha256Hex(candidate.id);var ruleHash=await sha256Hex(state.rule+'|'+$('licenseCode').value+'|'+Math.round(Number($('splitBps').value||0)*100));var inputCommitment=candidate.circuitInputCommitment||await sha256Hex(JSON.stringify({parentExists:true,contentTypeAllowed:true,ruleAllowed:true,attributionPreserved:true,licenseAccepted:true,splitWithinLimit:true,contentType:candidate.contentType,rule:state.rule,recipeCode:candidate.recipeCode||''}));var recipeHash=await sha256Hex(candidate.recipeCode||'UNKNOWN_RECIPE');var typeCode=candidate.contentType==='text'?'02':'01';var splitHex=Math.round(Number($('splitBps').value||0)*100).toString(16).padStart(4,'0');return '0x3d85d609'+word(relayHash)+word(parentHash)+word(contentHash)+word(ruleHash)+word(inputCommitment)+word(recipeHash)+word(typeCode)+word(splitHex)}
-      async function publishToRegistry(candidate){var address=state.integrations&&state.integrations.xLayer&&state.integrations.xLayer.registryAddress;if(!address)return null;if(!window.ethereum)throw new Error('已配置 RelayRegistry，但当前浏览器没有可用的钱包。请使用 OKX Wallet 或兼容 EVM 钱包。');var chain=await window.ethereum.request({method:'eth_chainId'});if(parseInt(chain,16)!==196)throw new Error('请先将钱包切换到 X Layer 主网（Chain ID 196）。');var accounts=await window.ethereum.request({method:'eth_requestAccounts'});if(!accounts||!accounts[0])throw new Error('需要连接钱包后才能写入 X Layer。');var txHash=await window.ethereum.request({method:'eth_sendTransaction',params:[{from:accounts[0],to:address,data:await registryCalldata(candidate)}]});return txHash}
+      async function publishToRegistry(candidate){var address=state.integrations&&state.integrations.xLayer&&state.integrations.xLayer.registryAddress;if(!address)return null;if(state.pendingRegistryTxHash&&state.pendingRegistryCandidateId===candidate.id)return state.pendingRegistryTxHash;if(!window.ethereum)throw new Error('已配置 RelayRegistry，但当前浏览器没有可用的钱包。请使用 OKX Wallet 或兼容 EVM 钱包。');var chain=await window.ethereum.request({method:'eth_chainId'});if(parseInt(chain,16)!==196)throw new Error('请先将钱包切换到 X Layer 主网（Chain ID 196）。');var accounts=await window.ethereum.request({method:'eth_requestAccounts'});if(!accounts||!accounts[0])throw new Error('需要连接钱包后才能写入 X Layer。');var txHash=await window.ethereum.request({method:'eth_sendTransaction',params:[{from:accounts[0],to:address,data:await registryCalldata(candidate)}]});state.pendingRegistryTxHash=txHash;state.pendingRegistryCandidateId=candidate.id;return txHash}
       function panelPosition(panel){return panel===0?'left center':panel===1?'center center':'right center'}
       function currentNode(){return state.nodes.find(function(node){return node.id===state.selectedNode})||state.nodes[0]}
       function artworkStyle(node){
@@ -479,6 +485,7 @@
         $('nodeEdition').textContent='NODE '+node.id.slice(0,8).toUpperCase()+' / '+String(state.nodes.length).padStart(2,'0');
         $('nodeCreator').textContent='by '+node.creator;$('creatorAvatar').textContent=node.creator.replace('@','').charAt(0).toUpperCase();
         $('batonName').textContent=node.creator+' 传来的 '+node.title;$('batonTime').textContent=(node.contentType==='text'?'文字接力 · ':'图片接力 · ')+(node.parent?'父节点 '+node.parent.slice(0,8).toUpperCase():'原始 Seed')+' · 可继续接力';
+        $('intentNote').hidden=!node.prompt&&!node.preservePrompt;$('intentNote').innerHTML=node.prompt||node.preservePrompt?'<b>上一棒的创作意图</b>'+(node.preservePrompt?'<p>保留：'+escapeText(node.preservePrompt)+'</p>':'')+(node.prompt?'<p>改变：'+escapeText(node.prompt)+'</p>':''):'';
       }
       function renderRail(){
         var path=state.nodes.filter(function(node){return !node.branch}).slice(-8);
@@ -500,9 +507,10 @@
         $('ruleChips').querySelectorAll('[data-content]').forEach(function(item){item.hidden=item.dataset.content!==state.contentType;item.classList.remove('active');item.setAttribute('aria-pressed','false')});
         var selected=visible[0];if(selected){selected.classList.add('active');selected.setAttribute('aria-pressed','true');state.rule=selected.dataset.rule}
         var freeform=state.rule==='自由创作';
-        $('promptInput').placeholder=freeform?'例如：整理成给老板汇报的三点结论，补充风险和下一步。':(state.contentType==='text'?'例如：让它更像一封写给未来自己的短信。':'例如：让城市信号更明亮，像刚收到来自未来的好消息。');
-        $('promptInput').value=freeform?'直接描述你希望这一棒完成的任务。':(state.contentType==='text'?'把这段文字改成更有画面感、适合分享的版本。':'让城市信号变得更明亮，像刚刚收到来自未来的好消息。');
-        var recipe=recipeLabels[contentLabel(state.contentType)+':'+state.rule]||recipeLabels['图片:色彩气候'];$('recipePreview').innerHTML='<b>Remix Recipe 预览 · '+escapeText(recipe[0])+'</b><span>'+escapeText(recipe[1])+'</span><code>发布前由 X Layer TapeOut Circuit #5 复核谱系、授权与分成条件。</code>';
+        $('promptInput').placeholder=freeform?'例如：让画面像一张雨夜收到的明信片。':(state.contentType==='text'?'例如：让它更像一封写给未来自己的短信。':'例如：让城市信号更明亮，像刚收到来自未来的好消息。');
+        $('promptInput').value=freeform?'直接描述这一棒想做出的作品变化。':(state.contentType==='text'?'把这段文字改成更有画面感、适合分享的版本。':'让城市信号变得更明亮，像刚刚收到来自未来的好消息。');
+        $('preserveInput').value=state.contentType==='text'?'保留人物关系、核心事实与原作来源':'保留主体、核心构图与原作来源';
+        var recipe=recipeLabels[contentLabel(state.contentType)+':'+state.rule]||recipeLabels['图片:色彩气候'];$('recipePreview').innerHTML='<b>Remix Recipe 预览 · '+escapeText(recipe[0])+'</b><span>'+escapeText(recipe[1])+'</span><code>生成前由 TapeOut Circuit #5 判定规则输入并返回配方；它不理解作品内容，也不保证 AI 一定遵守语义约束。</code>';
         $('publishStatus').innerHTML=freeform?'<b>自由创作已开启</b>'+contentLabel(state.contentType)+' · 直接描述这一棒要完成的任务':'<b>规则已锁定</b>'+contentLabel(state.contentType)+' · 本次只允许改变“'+escapeText(state.rule)+'”';
       }
       async function bootstrap(){
@@ -526,6 +534,7 @@
       $('ruleChips').querySelectorAll('.rule-chip').forEach(function(chip){chip.addEventListener('click',function(){
         if(chip.hidden)return;
         $('ruleChips').querySelectorAll('.rule-chip').forEach(function(item){item.classList.remove('active');item.setAttribute('aria-pressed','false')});chip.classList.add('active');chip.setAttribute('aria-pressed','true');state.rule=chip.dataset.rule;
+        var recipe=recipeLabels[contentLabel(state.contentType)+':'+state.rule];$('recipePreview').innerHTML='<b>Remix Recipe 预览 · '+escapeText(recipe[0])+'</b><span>'+escapeText(recipe[1])+'</span><code>生成前由 TapeOut Circuit #5 判定规则输入并返回配方；它不理解作品内容，也不保证 AI 一定遵守语义约束。</code>';
         $('publishStatus').innerHTML=state.rule==='自由创作'?'<b>自由创作已开启</b>直接描述这一棒要完成的任务':'<b>规则已锁定</b>本次只允许改变“'+escapeText(state.rule)+'”';
       })});
       var assistantHistory=[];
@@ -535,13 +544,13 @@
       $('modeCandidates').addEventListener('click',function(){$('modeCandidates').classList.add('active');$('modeAssistant').classList.remove('active');$('modeCandidates').setAttribute('aria-selected','true');$('modeAssistant').setAttribute('aria-selected','false');$('assistantWorkspace').hidden=true;$('studio').hidden=false});
       $('modeAssistant').addEventListener('click',function(){$('modeAssistant').classList.add('active');$('modeCandidates').classList.remove('active');$('modeAssistant').setAttribute('aria-selected','true');$('modeCandidates').setAttribute('aria-selected','false');$('studio').hidden=true;$('assistantWorkspace').hidden=false;$('assistantInput').focus()});
       $('candidateGrid').querySelectorAll('.candidate').forEach(function(candidate){candidate.addEventListener('click',function(){
-        $('candidateGrid').querySelectorAll('.candidate').forEach(function(item){item.classList.remove('selected');item.setAttribute('aria-pressed','false')});candidate.classList.add('selected');candidate.setAttribute('aria-pressed','true');state.selectedCandidate=Number(candidate.dataset.candidate);state.selectedCandidateId=state.candidates[state.selectedCandidate].id;
+        $('candidateGrid').querySelectorAll('.candidate').forEach(function(item){item.classList.remove('selected');item.setAttribute('aria-pressed','false')});candidate.classList.add('selected');candidate.setAttribute('aria-pressed','true');state.selectedCandidate=Number(candidate.dataset.candidate);state.selectedCandidateId=state.candidates[state.selectedCandidate].id;if(state.pendingRegistryCandidateId!==state.selectedCandidateId){state.pendingRegistryTxHash=null;state.pendingRegistryCandidateId=null}
       })});
       $('generateCandidates').addEventListener('click',async function(){
-        var prompt=$('promptInput').value.trim();if(prompt.length<4){showToast('请先写下至少 4 个字符的创作意图');$('promptInput').focus();return}
+        var prompt=$('promptInput').value.trim();var preserve=$('preserveInput').value.trim();if(prompt.length<4){showToast('请先写下至少 4 个字符的创作意图');$('promptInput').focus();return}
         var button=this;button.disabled=true;button.textContent='真实 AI 生成中…';$('publishNode').disabled=true;$('publishStatus').innerHTML='<b style="color:var(--amber)">正在生成 3 个候选</b>通常需要几十秒，请不要关闭页面';
         try{
-          var payload=await api('/api/generate',{method:'POST',body:JSON.stringify({relayId:state.relayId,parentNodeId:currentNode().id,contentType:state.contentType,rule:state.rule,prompt:prompt,idempotencyKey:crypto.randomUUID()})});
+          var payload=await api('/api/generate',{method:'POST',body:JSON.stringify({relayId:state.relayId,parentNodeId:currentNode().id,contentType:state.contentType,rule:state.rule,prompt:prompt,preserve:preserve,idempotencyKey:crypto.randomUUID()})});
           state.candidates=payload.candidates;state.generated=true;state.selectedCandidate=0;state.selectedCandidateId=payload.candidates[0].id;
           $('candidateGrid').querySelectorAll('.candidate').forEach(function(item,index){var candidate=payload.candidates[index];item.disabled=false;item.classList.toggle('selected',index===0);item.setAttribute('aria-pressed',index===0?'true':'false');var art=item.querySelector('.candidate-art');if(candidate.contentType==='text'){art.className='candidate-text';art.style.backgroundImage='none';art.textContent=candidate.previewText||'文字候选已生成'}else{art.className='candidate-art';art.textContent='';art.style.backgroundImage='url("'+encodeURI(candidate.assetUrl||candidate.imageUrl)+'")'}});
           if(payload.credits)$('creditBalance').textContent=payload.credits.balance+' Credits';$('publishNode').disabled=false;$('publishNode').textContent='发布为下一棒';$('publishStatus').innerHTML='<b>3 个真实候选已保存</b>请选择一个版本加入公共 Relay';showToast('真实 AI 候选已生成');
@@ -555,11 +564,11 @@
         if(!state.selectedCandidateId){showToast('请先生成并选择候选');return}
         var button=this;button.disabled=true;button.textContent='正在发布…';
         try{
-          var licenseCode=$('licenseCode').value;var splitBps=Math.round(Number($('splitBps').value||0)*100);var selectedCandidate=state.candidates[state.selectedCandidate];var registryTxHash=await publishToRegistry(selectedCandidate);var payload=await api('/api/nodes',{method:'POST',body:JSON.stringify({candidateId:state.selectedCandidateId,licenseCode:licenseCode,splitBps:splitBps,registryTxHash:registryTxHash})});if(!payload.duplicate)state.nodes.push(payload.node);state.selectedNode=payload.node.id;renderAll();
+          var licenseCode=$('licenseCode').value;var splitBps=Math.round(Number($('splitBps').value||0)*100);var selectedCandidate=state.candidates[state.selectedCandidate];var registryTxHash=await publishToRegistry(selectedCandidate);var payload=await api('/api/nodes',{method:'POST',body:JSON.stringify({candidateId:state.selectedCandidateId,licenseCode:licenseCode,splitBps:splitBps,registryTxHash:registryTxHash})});state.pendingRegistryTxHash=null;state.pendingRegistryCandidateId=null;if(!payload.duplicate)state.nodes.push(payload.node);state.selectedNode=payload.node.id;renderAll();
           $('receiptNode').textContent=payload.node.id.slice(0,12);$('receiptParent').textContent=(payload.node.parent||'—').slice(0,12);$('receiptRule').textContent=payload.node.title;$('receiptCreator').textContent=payload.node.creator;$('receiptContentHash').textContent=payload.node.contentHash||'—';$('receiptHash').textContent=payload.receipt?payload.receipt.hash:'已存在';$('receiptLicense').textContent=payload.node.licenseCode||licenseCode;$('receiptCircuit').textContent=payload.node.ruleResult&&payload.node.ruleResult.passed?'Circuit #'+payload.node.ruleResult.circuitId+' 已复核 · eth_call':'Circuit 未复核';$('receiptCircuit').className=payload.node.ruleResult&&payload.node.ruleResult.passed?'status-real':'status-pending';$('receiptStorage').textContent=payload.receipt?(payload.receipt.registryTxHash?'D1 + R2 + X Layer':'D1 + R2'):'D1 + R2';
           lastFocus=button;$('receiptDrawer').removeAttribute('inert');$('receiptDrawer').classList.add('open');$('receiptDrawer').setAttribute('aria-hidden','false');$('closeDrawer').focus();showToast('下一棒已发布到公共谱系');
           state.generated=false;state.selectedCandidateId=null;
-        }catch(error){showToast(error.message)}finally{button.disabled=!state.selectedCandidateId;button.textContent='发布为下一棒'}
+        }catch(error){showToast(error.message)}finally{button.disabled=!state.selectedCandidateId;button.textContent=state.pendingRegistryTxHash?'重试核验并发布':'发布为下一棒'}
       });
       function closeDrawer(){$('receiptDrawer').classList.remove('open');$('receiptDrawer').setAttribute('aria-hidden','true');$('receiptDrawer').setAttribute('inert','');if(lastFocus)lastFocus.focus()}
       $('closeDrawer').addEventListener('click',closeDrawer);
